@@ -522,21 +522,24 @@
                 if (pieceData.has3DModel) {
                     // Special handling for piece #1 - circular string art
                     if (pieceData.id === 1 && loadedImages[pieceData.id]) {
-                        // Create circular disc for string art - STANDING LIKE "O"
-                        const discGeometry = new THREE.CircleGeometry(0.5, 64); // 1m diameter
+                        // Create THIN CYLINDER for string art (gives us control over which face shows)
+                        const cylinderGeometry = new THREE.CylinderGeometry(0.5, 0.5, 0.02, 64); // radius 0.5m, thin 2cm, 64 segments
                         const discTexture = new THREE.Texture(loadedImages[pieceData.id]);
                         discTexture.needsUpdate = true;
-                        const discMaterial = new THREE.MeshStandardMaterial({ 
-                            map: discTexture,
-                            side: THREE.DoubleSide
-                        });
                         
-                        const art = new THREE.Mesh(discGeometry, discMaterial);
+                        // Apply texture to the TOP face of cylinder (which will face viewer)
+                        const materials = [
+                            new THREE.MeshStandardMaterial({ color: 0x8B7355 }), // side (edge color - brownish)
+                            new THREE.MeshStandardMaterial({ map: discTexture, side: THREE.DoubleSide }), // top (your image)
+                            new THREE.MeshStandardMaterial({ map: discTexture, side: THREE.DoubleSide })  // bottom (your image)
+                        ];
+                        
+                        const art = new THREE.Mesh(cylinderGeometry, materials);
                         art.position.y = 1.5; // Center height
                         
-                        // Stand VERTICALLY like letter "O" - just rotate Y to face center
-                        // Circle is already vertical by default in Three.js
-                        art.rotation.y = rotationY; // Rotate to face room center
+                        // Tip the cylinder 90 degrees so the TOP face points at viewer
+                        art.rotation.x = Math.PI / 2; // Tip forward so top faces viewer
+                        art.rotation.y = rotationY; // Then rotate to face room center
                         
                         art.castShadow = true;
                         group.add(art);
