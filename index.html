@@ -522,8 +522,8 @@
                 if (pieceData.has3DModel) {
                     // Special handling for piece #1 - circular string art
                     if (pieceData.id === 1 && loadedImages[pieceData.id]) {
-                        // Create circular disc for string art
-                        const discGeometry = new THREE.CircleGeometry(0.3, 64); // 60cm diameter, high detail
+                        // Create circular disc for string art - LARGER (80cm diameter)
+                        const discGeometry = new THREE.CircleGeometry(0.4, 64); // 80cm diameter, high detail
                         const discTexture = new THREE.Texture(loadedImages[pieceData.id]);
                         discTexture.needsUpdate = true;
                         const discMaterial = new THREE.MeshStandardMaterial({ 
@@ -532,9 +532,9 @@
                         });
                         
                         const art = new THREE.Mesh(discGeometry, discMaterial);
-                        art.position.y = 1.2;
-                        art.rotation.y = rotationY;
-                        art.rotation.x = Math.PI / 2; // Stand upright
+                        art.position.y = 1.3; // Slightly higher
+                        // Stand UPRIGHT facing viewer - no rotation on X axis
+                        art.rotation.y = rotationY; // Only rotate to face center
                         art.castShadow = true;
                         group.add(art);
                         artPiece = art;
