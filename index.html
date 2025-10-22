@@ -536,23 +536,29 @@
                         const art = new THREE.Mesh(cylinderGeometry, materials);
                         art.position.y = 1.5;
                         
-                        // First tip sideways so the face shows (not the edge)
-                        art.rotation.z = Math.PI / 2;
-                        // Then rotate to face the CENTER of the room
-                        art.rotation.y = rotationY + Math.PI / 2; // Add 90° to correct orientation
+                        // Rotate to face center - different approach
+                        art.rotation.z = Math.PI / 2; // Tip so face shows (not edge)
+                        art.rotation.x = rotationY; // Use X rotation to point face toward center
                         
                         art.castShadow = true;
+                        art.receiveShadow = true;
                         group.add(art);
                         artPiece = art;
                         
-                        // Add DEDICATED BRIGHT SPOTLIGHT for piece #1
-                        const artSpotlight = new THREE.SpotLight(0xffffff, 3.0); // Bright white light
-                        artSpotlight.position.set(pos.x, 5, pos.z);
+                        // Add EXTRA BRIGHT SPOTLIGHT for piece #1
+                        const artSpotlight = new THREE.SpotLight(0xffffff, 4.5); // Even brighter
+                        artSpotlight.position.set(pos.x, 5.5, pos.z);
                         artSpotlight.target = art;
-                        artSpotlight.angle = Math.PI / 10; // Focused beam
-                        artSpotlight.penumbra = 0.3;
+                        artSpotlight.angle = Math.PI / 8;
+                        artSpotlight.penumbra = 0.2;
+                        artSpotlight.distance = 10;
                         artSpotlight.castShadow = true;
                         scene.add(artSpotlight);
+                        
+                        // Add front fill light to brighten the face
+                        const fillLight = new THREE.PointLight(0xffffff, 2.0, 5);
+                        fillLight.position.set(pos.x, 1.5, pos.z + 2); // In front of piece
+                        scene.add(fillLight);
                     } else {
                         // Regular box for other pieces
                         const art = new THREE.Mesh(artGeo, artMaterials[i % 3]);
