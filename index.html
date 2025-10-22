@@ -522,24 +522,25 @@
                 if (pieceData.has3DModel) {
                     // Special handling for piece #1 - circular string art
                     if (pieceData.id === 1 && loadedImages[pieceData.id]) {
-                        // Create THIN CYLINDER for string art (gives us control over which face shows)
-                        const cylinderGeometry = new THREE.CylinderGeometry(0.5, 0.5, 0.02, 64); // radius 0.5m, thin 2cm, 64 segments
+                        // Create THIN CYLINDER for string art - standing UPRIGHT
+                        const cylinderGeometry = new THREE.CylinderGeometry(0.5, 0.5, 0.02, 64); // radius 0.5m, thin 2cm
                         const discTexture = new THREE.Texture(loadedImages[pieceData.id]);
                         discTexture.needsUpdate = true;
                         
-                        // Apply texture to the TOP face of cylinder (which will face viewer)
+                        // Cylinder starts vertical (standing up), so we need to tip it sideways
+                        // to make the flat face point at viewer
                         const materials = [
-                            new THREE.MeshStandardMaterial({ color: 0x8B7355 }), // side (edge color - brownish)
-                            new THREE.MeshStandardMaterial({ map: discTexture, side: THREE.DoubleSide }), // top (your image)
-                            new THREE.MeshStandardMaterial({ map: discTexture, side: THREE.DoubleSide })  // bottom (your image)
+                            new THREE.MeshStandardMaterial({ color: 0x8B7355 }), // side edge
+                            new THREE.MeshStandardMaterial({ map: discTexture }), // top face
+                            new THREE.MeshStandardMaterial({ map: discTexture })  // bottom face
                         ];
                         
                         const art = new THREE.Mesh(cylinderGeometry, materials);
-                        art.position.y = 1.5; // Center height
+                        art.position.y = 1.5;
                         
-                        // Tip the cylinder 90 degrees so the TOP face points at viewer
-                        art.rotation.x = Math.PI / 2; // Tip forward so top faces viewer
-                        art.rotation.y = rotationY; // Then rotate to face room center
+                        // Cylinder is VERTICAL by default, tip it sideways so face shows
+                        art.rotation.z = Math.PI / 2; // Tip sideways 90 degrees
+                        art.rotation.y = rotationY; // Then face room center
                         
                         art.castShadow = true;
                         group.add(art);
