@@ -522,8 +522,8 @@
                 if (pieceData.has3DModel) {
                     // Special handling for piece #1 - circular string art
                     if (pieceData.id === 1 && loadedImages[pieceData.id]) {
-                        // Create circular disc for string art - STANDING VERTICALLY
-                        const discGeometry = new THREE.CircleGeometry(0.5, 64); // 1m diameter (100cm)
+                        // Create circular disc for string art - STANDING LIKE "O"
+                        const discGeometry = new THREE.CircleGeometry(0.5, 64); // 1m diameter
                         const discTexture = new THREE.Texture(loadedImages[pieceData.id]);
                         discTexture.needsUpdate = true;
                         const discMaterial = new THREE.MeshStandardMaterial({ 
@@ -534,10 +534,9 @@
                         const art = new THREE.Mesh(discGeometry, discMaterial);
                         art.position.y = 1.5; // Center height
                         
-                        // Make it stand VERTICALLY (perpendicular to pedestal)
-                        // First rotate to stand up, then rotate to face center
-                        art.rotation.x = -Math.PI / 2; // Tip it up to vertical
-                        art.rotation.z = rotationY; // Then rotate to face center
+                        // Stand VERTICALLY like letter "O" - just rotate Y to face center
+                        // Circle is already vertical by default in Three.js
+                        art.rotation.y = rotationY; // Rotate to face room center
                         
                         art.castShadow = true;
                         group.add(art);
