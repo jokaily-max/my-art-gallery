@@ -527,8 +527,6 @@
                         const discTexture = new THREE.Texture(loadedImages[pieceData.id]);
                         discTexture.needsUpdate = true;
                         
-                        // Cylinder starts vertical (standing up), so we need to tip it sideways
-                        // to make the flat face point at viewer
                         const materials = [
                             new THREE.MeshStandardMaterial({ color: 0x8B7355 }), // side edge
                             new THREE.MeshStandardMaterial({ map: discTexture }), // top face
@@ -538,13 +536,23 @@
                         const art = new THREE.Mesh(cylinderGeometry, materials);
                         art.position.y = 1.5;
                         
-                        // Cylinder is VERTICAL by default, tip it sideways so face shows
-                        art.rotation.z = Math.PI / 2; // Tip sideways 90 degrees
-                        art.rotation.y = rotationY; // Then face room center
+                        // First tip sideways so the face shows (not the edge)
+                        art.rotation.z = Math.PI / 2;
+                        // Then rotate to face the CENTER of the room
+                        art.rotation.y = rotationY + Math.PI / 2; // Add 90° to correct orientation
                         
                         art.castShadow = true;
                         group.add(art);
                         artPiece = art;
+                        
+                        // Add DEDICATED BRIGHT SPOTLIGHT for piece #1
+                        const artSpotlight = new THREE.SpotLight(0xffffff, 3.0); // Bright white light
+                        artSpotlight.position.set(pos.x, 5, pos.z);
+                        artSpotlight.target = art;
+                        artSpotlight.angle = Math.PI / 10; // Focused beam
+                        artSpotlight.penumbra = 0.3;
+                        artSpotlight.castShadow = true;
+                        scene.add(artSpotlight);
                     } else {
                         // Regular box for other pieces
                         const art = new THREE.Mesh(artGeo, artMaterials[i % 3]);
