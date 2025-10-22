@@ -219,19 +219,22 @@
                 
                 // Get first sheet
                 const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-                const data = XLSX.utils.sheet_to_json(firstSheet);
+                const data = XLSX.utils.sheet_to_json(firstSheet, { defval: '' });
                 
                 console.log('Excel data loaded:', data);
                 
-                // Map Excel data to gallery pieces
-                // Adjust these column names to match your Excel file
+                if (data.length === 0) {
+                    throw new Error('Excel file is empty');
+                }
+                
+                // Map Excel data to gallery pieces - try multiple possible column names
                 data.forEach(row => {
                     const piece = {
-                        id: row['ID'] || row['Piece'] || row['Number'] || row['id'],
-                        title: row['Title'] || row['title'] || 'Untitled',
-                        artist: row['Artist'] || row['artist'] || 'Unknown Artist',
-                        year: row['Year'] || row['year'] || '',
-                        description: row['Description'] || row['description'] || '',
+                        id: row['ID'] || row['id'] || row['Piece'] || row['piece'] || row['Number'] || row['number'] || row['#'],
+                        title: row['Title'] || row['title'] || row['Name'] || row['name'] || 'Untitled',
+                        artist: row['Artist'] || row['artist'] || row['Creator'] || row['creator'] || 'Unknown Artist',
+                        year: String(row['Year'] || row['year'] || row['Date'] || row['date'] || ''),
+                        description: row['Description'] || row['description'] || row['Details'] || row['details'] || '',
                         has3DModel: true
                     };
                     
@@ -243,10 +246,11 @@
                 // Sort by ID
                 galleryData.pieces.sort((a, b) => a.id - b.id);
                 
-                console.log(`✓ Loaded ${galleryData.pieces.length} piece descriptions`);
+                console.log(`✓ Loaded ${galleryData.pieces.length} piece descriptions from Excel`);
                 return true;
             } catch (error) {
                 console.error('Error loading descriptions:', error);
+                console.log('Using default placeholder descriptions instead');
                 // Create default pieces if Excel fails
                 for (let i = 1; i <= 16; i++) {
                     galleryData.pieces.push({
@@ -254,7 +258,7 @@
                         title: `Art Piece ${i}`,
                         artist: 'Artist Name',
                         year: '2024',
-                        description: `Description for art piece ${i}.`,
+                        description: `Description for art piece ${i}. Upload descriptions.xlsx with columns: ID, Title, Artist, Year, Description`,
                         has3DModel: true
                     });
                 }
@@ -516,12 +520,33 @@
                 // Art piece on top - also facing center
                 let artPiece;
                 if (pieceData.has3DModel) {
-                    const art = new THREE.Mesh(artGeo, artMaterials[i % 3]);
-                    art.position.y = 1.2;
-                    art.rotation.y = rotationY;
-                    art.castShadow = true;
-                    group.add(art);
-                    artPiece = art;
+                    // Special handling for piece #1 - circular string art
+                    if (pieceData.id === 1 && loadedImages[pieceData.id]) {
+                        // Create circular disc for string art
+                        const discGeometry = new THREE.CircleGeometry(0.3, 64); // 60cm diameter, high detail
+                        const discTexture = new THREE.Texture(loadedImages[pieceData.id]);
+                        discTexture.needsUpdate = true;
+                        const discMaterial = new THREE.MeshStandardMaterial({ 
+                            map: discTexture,
+                            side: THREE.DoubleSide // Visible from both sides
+                        });
+                        
+                        const art = new THREE.Mesh(discGeometry, discMaterial);
+                        art.position.y = 1.2;
+                        art.rotation.y = rotationY;
+                        art.rotation.x = Math.PI / 2; // Stand upright
+                        art.castShadow = true;
+                        group.add(art);
+                        artPiece = art;
+                    } else {
+                        // Regular box for other pieces
+                        const art = new THREE.Mesh(artGeo, artMaterials[i % 3]);
+                        art.position.y = 1.2;
+                        art.rotation.y = rotationY;
+                        art.castShadow = true;
+                        group.add(art);
+                        artPiece = art;
+                    }
                 } else {
                     const invisibleBox = new THREE.Mesh(
                         new THREE.BoxGeometry(0.6, 0.6, 0.15),
