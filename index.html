@@ -533,31 +533,32 @@
                 // Art piece on top - also facing center
                 let artPiece;
                 if (pieceData.has3DModel) {
-                    // Special handling for piece #1 - circular string art
-                    if (pieceData.id === 1 && loadedImages[pieceData.id]) {
-                        // Use PLANE geometry instead of cylinder - much easier to orient
-                        const planeGeometry = new THREE.PlaneGeometry(1.0, 1.0); // 1m square
+                    // Special handling for piece #1 and #2 - circular string art 3D replicas
+                    if ((pieceData.id === 1 || pieceData.id === 2) && loadedImages[pieceData.id]) {
+                        // Create THIN CYLINDER for 3D effect (disc with thickness)
+                        const cylinderGeometry = new THREE.CylinderGeometry(0.5, 0.5, 0.03, 64); // radius 0.5m, 3cm thick
                         const discTexture = new THREE.Texture(loadedImages[pieceData.id]);
                         discTexture.needsUpdate = true;
                         
-                        const planeMaterial = new THREE.MeshStandardMaterial({ 
-                            map: discTexture,
-                            side: THREE.DoubleSide, // Visible from both sides
-                            transparent: false
-                        });
+                        const materials = [
+                            new THREE.MeshStandardMaterial({ color: 0x8B7355, roughness: 0.6 }), // side edge
+                            new THREE.MeshStandardMaterial({ map: discTexture }), // top face
+                            new THREE.MeshStandardMaterial({ map: discTexture })  // bottom face
+                        ];
                         
-                        const art = new THREE.Mesh(planeGeometry, planeMaterial);
+                        const art = new THREE.Mesh(cylinderGeometry, materials);
                         art.position.y = 1.5;
                         
-                        // Rotate 180 degrees from pedestal orientation to face inward
-                        art.rotation.y = rotationY + Math.PI;
+                        // Tip cylinder sideways, then rotate to face center
+                        art.rotation.z = Math.PI / 2; // Tip sideways so top face shows
+                        art.rotation.y = rotationY + Math.PI; // Face toward center (same fix as plane)
                         
                         art.castShadow = true;
                         art.receiveShadow = true;
                         group.add(art);
                         artPiece = art;
                         
-                        // Spotlight
+                        // Special bright spotlight for pieces 1 and 2
                         const artSpotlight = new THREE.SpotLight(0xffffff, 3.0);
                         artSpotlight.position.set(pos.x, 5.5, pos.z);
                         artSpotlight.target = art;
