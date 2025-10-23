@@ -536,9 +536,9 @@
                         const art = new THREE.Mesh(cylinderGeometry, materials);
                         art.position.y = 1.5;
                         
-                        // Rotate to face center - different approach
-                        art.rotation.z = Math.PI / 2; // Tip so face shows (not edge)
-                        art.rotation.x = rotationY; // Use X rotation to point face toward center
+                        // DON'T rotate Z - keep cylinder vertical
+                        // ONLY rotate Y to face center - this shows the TOP FACE
+                        art.rotation.y = rotationY;
                         
                         art.castShadow = true;
                         art.receiveShadow = true;
@@ -546,7 +546,7 @@
                         artPiece = art;
                         
                         // Add EXTRA BRIGHT SPOTLIGHT for piece #1
-                        const artSpotlight = new THREE.SpotLight(0xffffff, 4.5); // Even brighter
+                        const artSpotlight = new THREE.SpotLight(0xffffff, 4.5);
                         artSpotlight.position.set(pos.x, 5.5, pos.z);
                         artSpotlight.target = art;
                         artSpotlight.angle = Math.PI / 8;
@@ -555,9 +555,9 @@
                         artSpotlight.castShadow = true;
                         scene.add(artSpotlight);
                         
-                        // Add front fill light to brighten the face
+                        // Add front fill light
                         const fillLight = new THREE.PointLight(0xffffff, 2.0, 5);
-                        fillLight.position.set(pos.x, 1.5, pos.z + 2); // In front of piece
+                        fillLight.position.set(pos.x, 1.5, pos.z + 2);
                         scene.add(fillLight);
                     } else {
                         // Regular box for other pieces
