@@ -522,30 +522,29 @@
                 if (pieceData.has3DModel) {
                     // Special handling for piece #1 - circular string art
                     if (pieceData.id === 1 && loadedImages[pieceData.id]) {
-                        // Create THIN CYLINDER for string art
-                        const cylinderGeometry = new THREE.CylinderGeometry(0.5, 0.5, 0.02, 64);
+                        // Use PLANE geometry instead of cylinder - much easier to orient
+                        const planeGeometry = new THREE.PlaneGeometry(1.0, 1.0); // 1m square
                         const discTexture = new THREE.Texture(loadedImages[pieceData.id]);
                         discTexture.needsUpdate = true;
                         
-                        const materials = [
-                            new THREE.MeshStandardMaterial({ color: 0x8B7355 }), // side edge
-                            new THREE.MeshStandardMaterial({ map: discTexture }), // top face
-                            new THREE.MeshStandardMaterial({ map: discTexture })  // bottom face
-                        ];
+                        const planeMaterial = new THREE.MeshStandardMaterial({ 
+                            map: discTexture,
+                            side: THREE.DoubleSide, // Visible from both sides
+                            transparent: false
+                        });
                         
-                        const art = new THREE.Mesh(cylinderGeometry, materials);
+                        const art = new THREE.Mesh(planeGeometry, planeMaterial);
                         art.position.y = 1.5;
                         
-                        // TIP THE CYLINDER using Z axis rotation
-                        art.rotation.z = Math.PI / 2; // Tip sideways 90° (top now faces horizontally)
-                        art.rotation.y = rotationY; // Then rotate to face room center
+                        // Plane naturally faces forward - rotate to face room center + 90° adjustment
+                        art.rotation.y = rotationY + Math.PI / 2; // Added 90 degree swivel
                         
                         art.castShadow = true;
                         art.receiveShadow = true;
                         group.add(art);
                         artPiece = art;
                         
-                        // Spotlight - moderate brightness
+                        // Spotlight
                         const artSpotlight = new THREE.SpotLight(0xffffff, 3.0);
                         artSpotlight.position.set(pos.x, 5.5, pos.z);
                         artSpotlight.target = art;
