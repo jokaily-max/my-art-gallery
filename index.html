@@ -1,0 +1,1007 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modern Art Gallery</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; overflow: hidden; background: #000; cursor: default; touch-action: none; }
+        #canvas { display: block; width: 100vw; height: 100vh; cursor: crosshair; }
+        
+        #loading-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: #1a1a1a;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            flex-direction: column;
+            color: white;
+        }
+        
+        #loading-screen.hidden { display: none; }
+        
+        .loader {
+            border: 8px solid #333;
+            border-top: 8px solid #4CAF50;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        #loading-text {
+            font-size: 18px;
+            margin-top: 10px;
+        }
+        
+        #info {
+            position: absolute; top: 20px; left: 20px; color: white;
+            background: rgba(0, 0, 0, 0.7); padding: 15px; border-radius: 10px;
+            font-size: 14px; max-width: 300px; z-index: 10;
+        }
+        #info h3 { margin-bottom: 8px; }
+        
+        #artwork-detail {
+            position: absolute; top: 50%; left: 50%;
+            transform: translate(-50%, -50%) scale(0);
+            background: white; padding: 30px; border-radius: 15px;
+            max-width: 600px; max-height: 80vh;
+            overflow-y: auto;
+            transition: transform 0.3s ease; z-index: 100;
+        }
+        #artwork-detail.active { transform: translate(-50%, -50%) scale(1); }
+        #artwork-detail h2 { margin-bottom: 10px; color: #333; }
+        #artwork-detail p { margin-bottom: 8px; color: #666; }
+        #artwork-detail img { 
+            max-width: 100%; 
+            margin: 15px 0; 
+            border-radius: 8px;
+            cursor: pointer;
+        }
+        #close-btn {
+            position: absolute; top: 15px; right: 15px;
+            background: #e74c3c; color: white; border: none;
+            width: 30px; height: 30px; border-radius: 50%;
+            cursor: pointer; font-size: 18px; line-height: 30px;
+        }
+        #close-btn:hover { background: #c0392b; }
+
+        #minimap {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            width: 150px;
+            height: 150px;
+            background: rgba(0, 0, 0, 0.8);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 10px;
+            z-index: 10;
+        }
+
+        .mobile-controls {
+            display: none;
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 5;
+        }
+        .mobile-controls.active { display: block; }
+        
+        .joystick {
+            position: absolute;
+            width: 120px;
+            height: 120px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            pointer-events: all;
+        }
+        #joystick-left { bottom: 30px; left: 30px; }
+        #joystick-right { bottom: 30px; right: 30px; }
+        
+        .joystick-inner {
+            position: absolute;
+            width: 50px;
+            height: 50px;
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 50%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            transition: all 0.1s;
+        }
+
+        .control-btn {
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        .control-btn:hover { background: rgba(0, 0, 0, 0.9); }
+
+        #image-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.95);
+            z-index: 200;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+        }
+        #image-overlay.active { display: flex; }
+        #image-overlay img {
+            max-width: 90%;
+            max-height: 90%;
+            object-fit: contain;
+        }
+    </style>
+</head>
+<body>
+    <div id="loading-screen">
+        <div class="loader"></div>
+        <div id="loading-text">Loading gallery...</div>
+    </div>
+
+    <canvas id="canvas"></canvas>
+    
+    <div id="info">
+        <h3>Controls</h3>
+        <p id="desktop-controls"><strong>WASD/Arrows</strong> - Move<br><strong>Mouse Edges</strong> - Look<br><strong>Click Frame</strong> - Info</p>
+        <p id="mobile-controls-text" style="display:none;"><strong>Left Stick</strong> - Move<br><strong>Right Stick</strong> - Look<br><strong>Tap Frame</strong> - Info</p>
+        <button id="mode-toggle-btn" class="control-btn" style="margin-top: 10px; width: 100%;">Switch to Mobile</button>
+        <button id="fullscreen-btn" class="control-btn" style="margin-top: 5px; width: 100%;">Fullscreen</button>
+    </div>
+    
+    <canvas id="minimap"></canvas>
+    
+    <div class="mobile-controls">
+        <div id="joystick-left" class="joystick">
+            <div class="joystick-inner"></div>
+        </div>
+        <div id="joystick-right" class="joystick">
+            <div class="joystick-inner"></div>
+        </div>
+    </div>
+    
+    <div id="artwork-detail">
+        <button id="close-btn">×</button>
+        <h2 id="detail-title"></h2>
+        <p id="detail-artist"></p>
+        <p id="detail-year"></p>
+        <img id="detail-image" src="" alt="" style="display: none;">
+        <p id="detail-description"></p>
+    </div>
+
+    <div id="image-overlay">
+        <img id="enlarged-image" src="" alt="">
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script>
+        // Configuration
+        const CONFIG = {
+            descriptionsFile: './descriptions.xlsx', // Your Excel file
+            imagesFolder: './images/',               // Your images folder
+            imageExtensions: ['jpg', 'jpeg', 'png', 'JPG', 'JPEG', 'PNG']
+        };
+
+        let galleryData = {
+            pieces: []
+        };
+
+        // Load Excel file with descriptions
+        async function loadDescriptions() {
+            try {
+                const response = await fetch(CONFIG.descriptionsFile);
+                const arrayBuffer = await response.arrayBuffer();
+                const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+                
+                // Get first sheet
+                const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                const data = XLSX.utils.sheet_to_json(firstSheet, { defval: '' });
+                
+                console.log('Excel data loaded:', data);
+                
+                if (data.length === 0) {
+                    throw new Error('Excel file is empty');
+                }
+                
+                // Map Excel data to gallery pieces - try multiple possible column names
+                data.forEach(row => {
+                    const piece = {
+                        id: row['ID'] || row['id'] || row['Piece'] || row['piece'] || row['Number'] || row['number'] || row['#'],
+                        title: row['Title'] || row['title'] || row['Name'] || row['name'] || 'Untitled',
+                        artist: row['Artist'] || row['artist'] || row['Creator'] || row['creator'] || 'Unknown Artist',
+                        year: String(row['Year'] || row['year'] || row['Date'] || row['date'] || ''),
+                        description: row['Description'] || row['description'] || row['Details'] || row['details'] || '',
+                        has3DModel: true
+                    };
+                    
+                    if (piece.id) {
+                        galleryData.pieces.push(piece);
+                    }
+                });
+                
+                // Sort by ID
+                galleryData.pieces.sort((a, b) => a.id - b.id);
+                
+                console.log(`✓ Loaded ${galleryData.pieces.length} piece descriptions from Excel`);
+                return true;
+            } catch (error) {
+                console.error('Error loading descriptions:', error);
+                console.log('Using default placeholder descriptions instead');
+                // Create default pieces if Excel fails
+                for (let i = 1; i <= 16; i++) {
+                    galleryData.pieces.push({
+                        id: i,
+                        title: `Art Piece ${i}`,
+                        artist: 'Artist Name',
+                        year: '2024',
+                        description: `Description for art piece ${i}. Upload descriptions.xlsx with columns: ID, Title, Artist, Year, Description`,
+                        has3DModel: true
+                    });
+                }
+                return false;
+            }
+        }
+
+        // Preload all images
+        const loadedImages = {};
+        async function preloadImages() {
+            const imagePromises = [];
+            
+            for (let piece of galleryData.pieces) {
+                const promise = new Promise((resolve) => {
+                    let loaded = false;
+                    let extIndex = 0;
+                    
+                    function tryNextExtension() {
+                        if (extIndex >= CONFIG.imageExtensions.length) {
+                            console.log(`⚠ Image not found for piece ${piece.id}`);
+                            resolve();
+                            return;
+                        }
+                        
+                        const ext = CONFIG.imageExtensions[extIndex];
+                        const img = new Image();
+                        
+                        img.onload = function() {
+                            loadedImages[piece.id] = img;
+                            console.log(`✓ Loaded image for piece ${piece.id}`);
+                            resolve();
+                        };
+                        
+                        img.onerror = function() {
+                            extIndex++;
+                            tryNextExtension();
+                        };
+                        
+                        img.src = `${CONFIG.imagesFolder}piece${piece.id}.${ext}`;
+                    }
+                    
+                    tryNextExtension();
+                });
+                
+                imagePromises.push(promise);
+            }
+            
+            await Promise.all(imagePromises);
+            console.log(`✓ Preloaded ${Object.keys(loadedImages).length} images`);
+        }
+
+        // Initialize gallery
+        async function init() {
+            document.getElementById('loading-text').textContent = 'Loading descriptions...';
+            await loadDescriptions();
+            
+            document.getElementById('loading-text').textContent = 'Loading images...';
+            await preloadImages();
+            
+            document.getElementById('loading-text').textContent = 'Building gallery...';
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            document.getElementById('loading-screen').classList.add('hidden');
+            initGallery();
+        }
+
+        function initGallery() {
+            const scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x3a3a3a);
+
+            const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(0, 1.6, 10);
+
+            const canvas = document.getElementById('canvas');
+            const renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+            // Lighting
+            const ambient = new THREE.AmbientLight(0xffffff, 0.4);
+            scene.add(ambient);
+
+            const centerLight = new THREE.PointLight(0xffffff, 2.0, 30);
+            centerLight.position.set(0, 5, 0);
+            centerLight.castShadow = true;
+            scene.add(centerLight);
+
+            const fillLight1 = new THREE.PointLight(0xfff5e6, 0.8, 20);
+            fillLight1.position.set(10, 4, 10);
+            scene.add(fillLight1);
+
+            const fillLight2 = new THREE.PointLight(0xfff5e6, 0.8, 20);
+            fillLight2.position.set(-10, 4, -10);
+            scene.add(fillLight2);
+
+            // Floor
+            const floor = new THREE.Mesh(
+                new THREE.PlaneGeometry(40, 40),
+                new THREE.MeshStandardMaterial({ color: 0xc8c8c8, roughness: 0.6 })
+            );
+            floor.rotation.x = -Math.PI / 2;
+            floor.receiveShadow = true;
+            scene.add(floor);
+
+            // Ceiling
+            const ceiling = new THREE.Mesh(
+                new THREE.PlaneGeometry(40, 40),
+                new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.8 })
+            );
+            ceiling.position.y = 6;
+            ceiling.rotation.x = Math.PI / 2;
+            scene.add(ceiling);
+
+            // Central ceiling fixture
+            const fixture = new THREE.Mesh(
+                new THREE.TorusGeometry(1.5, 0.15, 16, 32),
+                new THREE.MeshStandardMaterial({ color: 0x4a4a4a, roughness: 0.3 })
+            );
+            fixture.position.set(0, 5.7, 0);
+            fixture.rotation.x = Math.PI / 2;
+            scene.add(fixture);
+
+            const lightDisc = new THREE.Mesh(
+                new THREE.CircleGeometry(1.4, 32),
+                new THREE.MeshStandardMaterial({ 
+                    color: 0xffffff,
+                    emissive: 0xffffff,
+                    emissiveIntensity: 0.8
+                })
+            );
+            lightDisc.position.set(0, 5.65, 0);
+            lightDisc.rotation.x = -Math.PI / 2;
+            scene.add(lightDisc);
+
+            // Walls
+            const wallMat = new THREE.MeshStandardMaterial({ color: 0x9a8570, roughness: 0.7 });
+
+            const backWall = new THREE.Mesh(new THREE.PlaneGeometry(40, 6), wallMat);
+            backWall.position.set(0, 3, -20);
+            backWall.receiveShadow = true;
+            scene.add(backWall);
+
+            const leftWall = new THREE.Mesh(new THREE.PlaneGeometry(40, 6), wallMat);
+            leftWall.position.set(-20, 3, 0);
+            leftWall.rotation.y = Math.PI / 2;
+            leftWall.receiveShadow = true;
+            scene.add(leftWall);
+
+            const rightWall = new THREE.Mesh(new THREE.PlaneGeometry(40, 6), wallMat);
+            rightWall.position.set(20, 3, 0);
+            rightWall.rotation.y = -Math.PI / 2;
+            rightWall.receiveShadow = true;
+            scene.add(rightWall);
+
+            const frontWall = new THREE.Mesh(new THREE.PlaneGeometry(40, 6), wallMat);
+            frontWall.position.set(0, 3, 20);
+            frontWall.rotation.y = Math.PI;
+            frontWall.receiveShadow = true;
+            scene.add(frontWall);
+
+            const artworkMeshes = [];
+
+            // Shared materials
+            const pedestalMat = new THREE.MeshStandardMaterial({ color: 0x2a2a2a, roughness: 0.4 });
+            const artMat1 = new THREE.MeshStandardMaterial({ color: 0x3a5f7a, roughness: 0.7 });
+            const artMat2 = new THREE.MeshStandardMaterial({ color: 0xb08560, roughness: 0.7 });
+            const artMat3 = new THREE.MeshStandardMaterial({ color: 0x5a4d42, roughness: 0.7 });
+            const artMaterials = [artMat1, artMat2, artMat3];
+
+            // Rectangular pedestal geometry - long side parallel to wall
+            const pedestalGeo = new THREE.BoxGeometry(1.2, 1, 0.6); // Width, Height, Depth
+            const artGeo = new THREE.BoxGeometry(0.6, 0.6, 0.15);
+
+            // Distribute pieces across walls - FILL EACH WALL COMPLETELY BEFORE MOVING TO NEXT
+            const totalPieces = galleryData.pieces.length;
+            const positions = [];
+            
+            // Calculate spacing - all pieces on back wall until full, then move to next wall
+            const maxPerWall = 10; // Maximum pieces per wall
+            
+            let remainingPieces = totalPieces;
+            
+            // Back wall - fill first (pieces will be side by side)
+            const backWallCount = Math.min(maxPerWall, remainingPieces);
+            for (let i = 0; i < backWallCount; i++) {
+                const spacing = 40 / (backWallCount + 1);
+                positions.push({ x: -20 + spacing * (i + 1), z: -19, wall: 'back' });
+            }
+            remainingPieces -= backWallCount;
+            
+            // Only add to other walls if back wall is full
+            if (remainingPieces > 0) {
+                // Left wall - fill second
+                const leftWallCount = Math.min(maxPerWall, remainingPieces);
+                for (let i = 0; i < leftWallCount; i++) {
+                    const spacing = 40 / (leftWallCount + 1);
+                    positions.push({ x: -19, z: -20 + spacing * (i + 1), wall: 'left' });
+                }
+                remainingPieces -= leftWallCount;
+            }
+            
+            if (remainingPieces > 0) {
+                // Right wall - fill third
+                const rightWallCount = Math.min(maxPerWall, remainingPieces);
+                for (let i = 0; i < rightWallCount; i++) {
+                    const spacing = 40 / (rightWallCount + 1);
+                    positions.push({ x: 19, z: -20 + spacing * (i + 1), wall: 'right' });
+                }
+                remainingPieces -= rightWallCount;
+            }
+            
+            if (remainingPieces > 0) {
+                // Front wall - fill last
+                const frontWallCount = remainingPieces;
+                for (let i = 0; i < frontWallCount; i++) {
+                    const spacing = 40 / (frontWallCount + 1);
+                    positions.push({ x: -20 + spacing * (i + 1), z: 19, wall: 'front' });
+                }
+            }
+
+            positions.forEach((pos, i) => {
+                if (i >= galleryData.pieces.length) return;
+                
+                const pieceData = galleryData.pieces[i];
+                const group = new THREE.Group();
+                
+                // Determine rotation to face center of room
+                let rotationY = 0;
+                if (pos.wall === 'back') {
+                    rotationY = 0; // Face forward (toward center)
+                } else if (pos.wall === 'front') {
+                    rotationY = Math.PI; // Face backward (toward center)
+                } else if (pos.wall === 'left') {
+                    rotationY = Math.PI / 2; // Face right (toward center)
+                } else if (pos.wall === 'right') {
+                    rotationY = -Math.PI / 2; // Face left (toward center)
+                }
+                
+                // Pedestal - rotated to face center, long side parallel to wall
+                const pedestal = new THREE.Mesh(pedestalGeo, pedestalMat);
+                pedestal.position.y = 0.5;
+                pedestal.rotation.y = rotationY;
+                pedestal.castShadow = true;
+                group.add(pedestal);
+
+                // Number plate on front of pedestal (facing center, readable from center)
+                const numberCanvas = document.createElement('canvas');
+                numberCanvas.width = 128;
+                numberCanvas.height = 64;
+                const numberCtx = numberCanvas.getContext('2d');
+                numberCtx.fillStyle = '#2a2a2a';
+                numberCtx.fillRect(0, 0, 128, 64);
+                numberCtx.fillStyle = '#ffffff';
+                numberCtx.font = 'bold 40px Arial';
+                numberCtx.textAlign = 'center';
+                numberCtx.textBaseline = 'middle';
+                numberCtx.fillText(pieceData.id.toString(), 64, 32);
+                
+                const numberTexture = new THREE.CanvasTexture(numberCanvas);
+                const numberPlate = new THREE.Mesh(
+                    new THREE.PlaneGeometry(0.4, 0.2),
+                    new THREE.MeshStandardMaterial({ map: numberTexture })
+                );
+                
+                // Position on front face of pedestal
+                numberPlate.position.set(0, 0.2, 0.35);
+                numberPlate.rotation.x = -Math.PI / 8;
+                numberPlate.rotation.y = rotationY;
+                group.add(numberPlate);
+
+                // Art piece on top - also facing center
+                let artPiece;
+                if (pieceData.has3DModel) {
+                    // Special handling for piece #1 - circular string art
+                    if (pieceData.id === 1 && loadedImages[pieceData.id]) {
+                        // Use PLANE geometry instead of cylinder - much easier to orient
+                        const planeGeometry = new THREE.PlaneGeometry(1.0, 1.0); // 1m square
+                        const discTexture = new THREE.Texture(loadedImages[pieceData.id]);
+                        discTexture.needsUpdate = true;
+                        
+                        const planeMaterial = new THREE.MeshStandardMaterial({ 
+                            map: discTexture,
+                            side: THREE.DoubleSide, // Visible from both sides
+                            transparent: false
+                        });
+                        
+                        const art = new THREE.Mesh(planeGeometry, planeMaterial);
+                        art.position.y = 1.5;
+                        
+                        // Try NO rotation first to see default orientation
+                        // Plane default faces Z-axis, so just match pedestal rotation
+                        art.rotation.y = rotationY;
+                        
+                        art.castShadow = true;
+                        art.receiveShadow = true;
+                        group.add(art);
+                        artPiece = art;
+                        
+                        // Spotlight
+                        const artSpotlight = new THREE.SpotLight(0xffffff, 3.0);
+                        artSpotlight.position.set(pos.x, 5.5, pos.z);
+                        artSpotlight.target = art;
+                        artSpotlight.angle = Math.PI / 8;
+                        artSpotlight.penumbra = 0.3;
+                        artSpotlight.distance = 10;
+                        artSpotlight.castShadow = true;
+                        scene.add(artSpotlight);
+                        
+                        // Front fill light
+                        const fillLight = new THREE.PointLight(0xffffff, 1.2, 5);
+                        fillLight.position.set(pos.x, 1.5, pos.z + 2);
+                        scene.add(fillLight);
+                    } else {
+                        // Regular box for other pieces
+                        const art = new THREE.Mesh(artGeo, artMaterials[i % 3]);
+                        art.position.y = 1.2;
+                        art.rotation.y = rotationY;
+                        art.castShadow = true;
+                        group.add(art);
+                        artPiece = art;
+                    }
+                } else {
+                    const invisibleBox = new THREE.Mesh(
+                        new THREE.BoxGeometry(0.6, 0.6, 0.15),
+                        new THREE.MeshBasicMaterial({ visible: false })
+                    );
+                    invisibleBox.position.y = 1.2;
+                    invisibleBox.rotation.y = rotationY;
+                    group.add(invisibleBox);
+                    artPiece = invisibleBox;
+                }
+
+                // Info frame on pedestal - also facing center
+                const infoFrame = new THREE.Group();
+                
+                const frameStand = new THREE.Mesh(
+                    new THREE.BoxGeometry(0.02, 0.15, 0.02),
+                    new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.4 })
+                );
+                frameStand.position.y = 0.075;
+                infoFrame.add(frameStand);
+                
+                const frameBacking = new THREE.Mesh(
+                    new THREE.BoxGeometry(0.25, 0.35, 0.01),
+                    new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.5 })
+                );
+                frameBacking.position.y = 0.175;
+                frameBacking.castShadow = true;
+                infoFrame.add(frameBacking);
+                
+                // Picture area - use preloaded image
+                const pictureCanvas = document.createElement('canvas');
+                pictureCanvas.width = 512;
+                pictureCanvas.height = 512;
+                const pictureCtx = pictureCanvas.getContext('2d');
+                
+                if (loadedImages[pieceData.id]) {
+                    pictureCtx.drawImage(loadedImages[pieceData.id], 0, 0, 512, 512);
+                } else {
+                    pictureCtx.fillStyle = '#ffffff';
+                    pictureCtx.fillRect(0, 0, 512, 512);
+                    pictureCtx.fillStyle = '#999999';
+                    pictureCtx.font = '32px Arial';
+                    pictureCtx.textAlign = 'center';
+                    pictureCtx.fillText('No Image', 256, 220);
+                    pictureCtx.font = '24px Arial';
+                    pictureCtx.fillText(`Piece ${pieceData.id}`, 256, 280);
+                }
+                
+                const pictureTex = new THREE.CanvasTexture(pictureCanvas);
+                const picture = new THREE.Mesh(
+                    new THREE.PlaneGeometry(0.22, 0.22),
+                    new THREE.MeshStandardMaterial({ map: pictureTex })
+                );
+                picture.position.set(0, 0.24, 0.006);
+                infoFrame.add(picture);
+                
+                // "CLICK HERE" text
+                const clickCanvas = document.createElement('canvas');
+                clickCanvas.width = 256;
+                clickCanvas.height = 64;
+                const clickCtx = clickCanvas.getContext('2d');
+                clickCtx.fillStyle = '#1a1a1a';
+                clickCtx.fillRect(0, 0, 256, 64);
+                clickCtx.fillStyle = '#ff0000';
+                clickCtx.font = 'bold 24px Arial';
+                clickCtx.textAlign = 'center';
+                clickCtx.fillText('CLICK HERE', 128, 40);
+                
+                const clickTex = new THREE.CanvasTexture(clickCanvas);
+                const clickText = new THREE.Mesh(
+                    new THREE.PlaneGeometry(0.22, 0.055),
+                    new THREE.MeshStandardMaterial({ map: clickTex })
+                );
+                clickText.position.set(0, 0.08, 0.006);
+                infoFrame.add(clickText);
+                
+                // Position frame on side of pedestal, facing center
+                let frameOffsetX = 0.45;
+                let frameOffsetZ = 0;
+                
+                if (pos.wall === 'back' || pos.wall === 'front') {
+                    frameOffsetX = 0.5;
+                    frameOffsetZ = 0;
+                } else {
+                    frameOffsetX = 0;
+                    frameOffsetZ = 0.35;
+                }
+                
+                infoFrame.position.set(frameOffsetX, 1.0, frameOffsetZ);
+                infoFrame.scale.set(0.75, 0.75, 0.75);
+                infoFrame.rotation.y = rotationY;
+                
+                infoFrame.userData = { isInfoFrame: true };
+                group.add(infoFrame);
+
+                group.position.set(pos.x, 0, pos.z);
+                
+                group.userData = { 
+                    artwork: {
+                        id: pieceData.id,
+                        title: pieceData.title,
+                        artist: pieceData.artist,
+                        year: pieceData.year,
+                        description: pieceData.description
+                    }
+                };
+                artworkMeshes.push(group);
+                scene.add(group);
+
+                // Spotlight
+                const spot = new THREE.SpotLight(0xffd4a3, 1.6);
+                spot.position.set(pos.x, 5.5, pos.z);
+                spot.target = artPiece;
+                spot.angle = Math.PI / 8;
+                spot.penumbra = 0.4;
+                if (i < 8) {
+                    spot.castShadow = true;
+                }
+                scene.add(spot);
+            });
+
+            // Central platform
+            const platform = new THREE.Mesh(
+                new THREE.BoxGeometry(8, 0.3, 8),
+                new THREE.MeshStandardMaterial({ color: 0x2a2a2a, roughness: 0.3 })
+            );
+            platform.position.set(0, 0.15, 0);
+            platform.castShadow = true;
+            scene.add(platform);
+
+            // Central installation
+            for (let i = 0; i < 30; i++) {
+                const h = 0.5 + Math.random() * 1.5;
+                const s = 0.2 + Math.random() * 0.3;
+                const building = new THREE.Mesh(
+                    new THREE.BoxGeometry(s, h, s),
+                    new THREE.MeshStandardMaterial({ color: 0x4a4a4a, roughness: 0.5 })
+                );
+                building.position.set(
+                    (Math.random() - 0.5) * 6,
+                    0.3 + h / 2,
+                    (Math.random() - 0.5) * 6
+                );
+                building.castShadow = true;
+                scene.add(building);
+            }
+
+            // CONTROLS
+            const keys = {};
+            let cameraYaw = 0;
+            let cameraPitch = 0;
+            let mouseX = window.innerWidth / 2;
+            let mouseY = window.innerHeight / 2;
+            const edgeThreshold = 100;
+            const rotationSpeed = 0.05;
+
+            // Mobile mode
+            let isMobileMode = false;
+            const joystickLeft = { active: false, x: 0, y: 0, startX: 0, startY: 0 };
+            const joystickRight = { active: false, x: 0, y: 0, startX: 0, startY: 0 };
+
+            document.addEventListener('keydown', (e) => keys[e.key.toLowerCase()] = true);
+            document.addEventListener('keyup', (e) => keys[e.key.toLowerCase()] = false);
+
+            document.addEventListener('mousemove', (e) => {
+                mouseX = e.clientX;
+                mouseY = e.clientY;
+            });
+
+            // Mobile joystick controls
+            function setupJoystick(elementId, joystickData) {
+                const joystick = document.getElementById(elementId);
+                const inner = joystick.querySelector('.joystick-inner');
+
+                joystick.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    const touch = e.touches[0];
+                    const rect = joystick.getBoundingClientRect();
+                    joystickData.active = true;
+                    joystickData.startX = rect.left + rect.width / 2;
+                    joystickData.startY = rect.top + rect.height / 2;
+                });
+
+                joystick.addEventListener('touchmove', (e) => {
+                    e.preventDefault();
+                    if (!joystickData.active) return;
+                    const touch = e.touches[0];
+                    const deltaX = touch.clientX - joystickData.startX;
+                    const deltaY = touch.clientY - joystickData.startY;
+                    
+                    const distance = Math.min(35, Math.sqrt(deltaX * deltaX + deltaY * deltaY));
+                    const angle = Math.atan2(deltaY, deltaX);
+                    
+                    joystickData.x = Math.cos(angle) * distance / 35;
+                    joystickData.y = Math.sin(angle) * distance / 35;
+                    
+                    inner.style.transform = `translate(calc(-50% + ${joystickData.x * 35}px), calc(-50% + ${joystickData.y * 35}px))`;
+                });
+
+                joystick.addEventListener('touchend', (e) => {
+                    e.preventDefault();
+                    joystickData.active = false;
+                    joystickData.x = 0;
+                    joystickData.y = 0;
+                    inner.style.transform = 'translate(-50%, -50%)';
+                });
+            }
+
+            setupJoystick('joystick-left', joystickLeft);
+            setupJoystick('joystick-right', joystickRight);
+
+            // Mode toggle
+            document.getElementById('mode-toggle-btn').addEventListener('click', () => {
+                isMobileMode = !isMobileMode;
+                document.querySelector('.mobile-controls').classList.toggle('active', isMobileMode);
+                document.getElementById('mode-toggle-btn').textContent = isMobileMode ? 'Switch to Desktop' : 'Switch to Mobile';
+                document.getElementById('desktop-controls').style.display = isMobileMode ? 'none' : 'block';
+                document.getElementById('mobile-controls-text').style.display = isMobileMode ? 'block' : 'none';
+            });
+
+            // Fullscreen
+            document.getElementById('fullscreen-btn').addEventListener('click', () => {
+                if (!document.fullscreenElement) {
+                    document.documentElement.requestFullscreen();
+                } else {
+                    document.exitFullscreen();
+                }
+            });
+
+            // Click detection
+            canvas.addEventListener('click', (e) => {
+                const rect = canvas.getBoundingClientRect();
+                const x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+                const y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+
+                const raycaster = new THREE.Raycaster();
+                raycaster.setFromCamera(new THREE.Vector2(x, y), camera);
+                const intersects = raycaster.intersectObjects(artworkMeshes, true);
+                
+                if (intersects.length > 0) {
+                    let obj = intersects[0].object;
+                    
+                    let parent = obj.parent;
+                    while (parent) {
+                        if (parent.userData.isInfoFrame) {
+                            let artworkGroup = parent.parent;
+                            while (artworkGroup && !artworkGroup.userData.artwork) {
+                                artworkGroup = artworkGroup.parent;
+                            }
+                            if (artworkGroup && artworkGroup.userData.artwork) {
+                                const art = artworkGroup.userData.artwork;
+                                
+                                document.getElementById('detail-title').textContent = art.title;
+                                document.getElementById('detail-artist').textContent = 'Artist: ' + art.artist;
+                                document.getElementById('detail-year').textContent = 'Year: ' + art.year;
+                                document.getElementById('detail-description').textContent = art.description;
+                                
+                                const detailImage = document.getElementById('detail-image');
+                                if (loadedImages[art.id]) {
+                                    detailImage.src = loadedImages[art.id].src;
+                                    detailImage.style.display = 'block';
+                                } else {
+                                    detailImage.style.display = 'none';
+                                }
+                                
+                                document.getElementById('artwork-detail').classList.add('active');
+                            }
+                            return;
+                        }
+                        parent = parent.parent;
+                    }
+                }
+            });
+
+            document.getElementById('close-btn').addEventListener('click', (e) => {
+                e.stopPropagation();
+                document.getElementById('artwork-detail').classList.remove('active');
+            });
+
+            // Image enlargement
+            document.getElementById('detail-image').addEventListener('click', (e) => {
+                e.stopPropagation();
+                const src = e.target.src;
+                document.getElementById('enlarged-image').src = src;
+                document.getElementById('image-overlay').classList.add('active');
+            });
+
+            document.getElementById('image-overlay').addEventListener('click', () => {
+                document.getElementById('image-overlay').classList.remove('active');
+            });
+
+            // MINIMAP
+            const minimapCanvas = document.getElementById('minimap');
+            const minimapCtx = minimapCanvas.getContext('2d');
+            minimapCanvas.width = 150;
+            minimapCanvas.height = 150;
+
+            function drawMinimap() {
+                minimapCtx.clearRect(0, 0, 150, 150);
+                
+                // Draw room outline
+                minimapCtx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+                minimapCtx.lineWidth = 2;
+                minimapCtx.strokeRect(10, 10, 130, 130);
+                
+                // Draw center platform
+                minimapCtx.fillStyle = 'rgba(100, 100, 100, 0.7)';
+                const centerSize = 130 * 8 / 40;
+                minimapCtx.fillRect(75 - centerSize/2, 75 - centerSize/2, centerSize, centerSize);
+                
+                // Draw artworks
+                positions.forEach(pos => {
+                    const mapX = 75 + (pos.x / 40) * 130;
+                    const mapZ = 75 + (pos.z / 40) * 130;
+                    
+                    minimapCtx.fillStyle = 'rgba(255, 200, 100, 0.8)';
+                    minimapCtx.beginPath();
+                    minimapCtx.arc(mapX, mapZ, 3, 0, Math.PI * 2);
+                    minimapCtx.fill();
+                });
+                
+                // Draw player position
+                const playerX = 75 + (camera.position.x / 40) * 130;
+                const playerZ = 75 + (camera.position.z / 40) * 130;
+                
+                minimapCtx.fillStyle = 'rgba(255, 50, 50, 0.9)';
+                minimapCtx.beginPath();
+                minimapCtx.arc(playerX, playerZ, 4, 0, Math.PI * 2);
+                minimapCtx.fill();
+                
+                // Draw player direction
+                minimapCtx.strokeStyle = 'rgba(255, 50, 50, 0.9)';
+                minimapCtx.lineWidth = 2;
+                minimapCtx.beginPath();
+                minimapCtx.moveTo(playerX, playerZ);
+                minimapCtx.lineTo(
+                    playerX + Math.sin(cameraYaw) * 10,
+                    playerZ + Math.cos(cameraYaw) * 10
+                );
+                minimapCtx.stroke();
+            }
+
+            // ANIMATION LOOP
+            function animate() {
+                requestAnimationFrame(animate);
+
+                // Desktop controls - mouse edge rotation
+                if (!isMobileMode) {
+                    const screenWidth = window.innerWidth;
+                    const screenHeight = window.innerHeight;
+
+                    if (mouseX < edgeThreshold) {
+                        cameraYaw += rotationSpeed;
+                    }
+                    if (mouseX > screenWidth - edgeThreshold) {
+                        cameraYaw -= rotationSpeed;
+                    }
+                    if (mouseY < edgeThreshold) {
+                        cameraPitch += rotationSpeed * 0.5;
+                    }
+                    if (mouseY > screenHeight - edgeThreshold) {
+                        cameraPitch -= rotationSpeed * 0.5;
+                    }
+                }
+
+                // Mobile controls - joystick rotation
+                if (isMobileMode && joystickRight.active) {
+                    cameraYaw -= joystickRight.x * 0.1;
+                    cameraPitch -= joystickRight.y * 0.05;
+                }
+
+                cameraPitch = Math.max(-Math.PI / 2.5, Math.min(Math.PI / 2.5, cameraPitch));
+
+                camera.rotation.order = 'YXZ';
+                camera.rotation.y = cameraYaw;
+                camera.rotation.x = cameraPitch;
+
+                // Movement
+                const forward = new THREE.Vector3();
+                camera.getWorldDirection(forward);
+                forward.y = 0;
+                forward.normalize();
+
+                const right = new THREE.Vector3();
+                right.crossVectors(forward, new THREE.Vector3(0, 1, 0));
+
+                const moveSpeed = 0.15;
+
+                // Desktop movement
+                if (!isMobileMode) {
+                    if (keys['w'] || keys['arrowup']) camera.position.addScaledVector(forward, moveSpeed);
+                    if (keys['s'] || keys['arrowdown']) camera.position.addScaledVector(forward, -moveSpeed);
+                    if (keys['a'] || keys['arrowleft']) camera.position.addScaledVector(right, -moveSpeed);
+                    if (keys['d'] || keys['arrowright']) camera.position.addScaledVector(right, moveSpeed);
+                }
+
+                // Mobile movement
+                if (isMobileMode && joystickLeft.active) {
+                    camera.position.addScaledVector(forward, -joystickLeft.y * moveSpeed);
+                    camera.position.addScaledVector(right, joystickLeft.x * moveSpeed);
+                }
+
+                // Boundary limits
+                camera.position.x = Math.max(-18, Math.min(18, camera.position.x));
+                camera.position.z = Math.max(-18, Math.min(18, camera.position.z));
+
+                drawMinimap();
+                renderer.render(scene, camera);
+            }
+
+            animate();
+
+            window.addEventListener('resize', () => {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            });
+        }
+
+        // Start loading when page loads
+        init();
+    </script>
+</body>
+</html>
