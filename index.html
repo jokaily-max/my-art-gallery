@@ -546,8 +546,7 @@
                         // Front face - with alpha/transparency to show only circular part
                         const frontMaterial = new THREE.MeshStandardMaterial({ 
                             map: discTexture,
-                            transparent: true,
-                            alphaTest: 0.1, // Hide mostly-transparent pixels
+                            transparent: false, // Changed to false - let image show fully
                             side: THREE.FrontSide
                         });
                         const frontFace = new THREE.Mesh(planeGeometry, frontMaterial);
@@ -557,8 +556,7 @@
                         // Back face
                         const backMaterial = new THREE.MeshStandardMaterial({ 
                             map: discTexture,
-                            transparent: true,
-                            alphaTest: 0.1,
+                            transparent: false, // Changed to false
                             side: THREE.BackSide
                         });
                         const backFace = new THREE.Mesh(planeGeometry, backMaterial);
