@@ -596,10 +596,10 @@
                         fillLight.position.set(pos.x, 1.5, pos.z + 2);
                         scene.add(fillLight);
                     } else {
-                        // Regular box for other pieces - ALSO use the rotation formula
+                        // Regular box for other pieces - face toward center
                         const art = new THREE.Mesh(artGeo, artMaterials[i % 3]);
                         art.position.y = 1.2;
-                        art.rotation.y = rotationY + Math.PI; // Face toward center (standardized)
+                        art.rotation.y = rotationY; // Face toward center (REMOVED + Math.PI)
                         art.castShadow = true;
                         group.add(art);
                         artPiece = art;
