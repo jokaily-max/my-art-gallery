@@ -203,7 +203,7 @@
         const CONFIG = {
             descriptionsFile: './descriptions.xlsx', // Your Excel file
             imagesFolder: './images/',               // Your images folder
-            imageExtensions: ['jpg', 'jpeg', 'png', 'JPG', 'JPEG', 'PNG']
+            imageExtensions: ['jpg', 'jpeg', 'png', 'JPG', 'JPEG', 'PNG', 'webp', 'WEBP'] // Try all common formats
         };
 
         let galleryData = {
@@ -537,17 +537,21 @@
                     if ((pieceData.id === 1 || pieceData.id === 2) && loadedImages[pieceData.id]) {
                         // Use PLANE with thickness illusion - with transparency for circular shape
                         const planeGeometry = new THREE.PlaneGeometry(1.0, 1.0);
+                        
+                        // Create texture from the preloaded image
                         const discTexture = new THREE.Texture(loadedImages[pieceData.id]);
                         discTexture.needsUpdate = true;
+                        discTexture.minFilter = THREE.LinearFilter; // Better quality
+                        discTexture.magFilter = THREE.LinearFilter;
                         
                         // Create a group to add thickness
                         const artGroup = new THREE.Group();
                         
-                        // Front face - with alpha/transparency to show only circular part
+                        // Front face
                         const frontMaterial = new THREE.MeshStandardMaterial({ 
                             map: discTexture,
-                            transparent: false, // Changed to false - let image show fully
-                            side: THREE.FrontSide
+                            transparent: false,
+                            side: THREE.DoubleSide // Show from both sides
                         });
                         const frontFace = new THREE.Mesh(planeGeometry, frontMaterial);
                         frontFace.position.z = 0.015;
@@ -556,8 +560,8 @@
                         // Back face
                         const backMaterial = new THREE.MeshStandardMaterial({ 
                             map: discTexture,
-                            transparent: false, // Changed to false
-                            side: THREE.BackSide
+                            transparent: false,
+                            side: THREE.DoubleSide
                         });
                         const backFace = new THREE.Mesh(planeGeometry, backMaterial);
                         backFace.position.z = -0.015;
