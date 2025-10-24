@@ -574,7 +574,7 @@
                         // Special bright spotlight for pieces 1 and 2
                         const artSpotlight = new THREE.SpotLight(0xffffff, 3.0);
                         artSpotlight.position.set(pos.x, 5.5, pos.z);
-                        artSpotlight.target = art;
+                        artSpotlight.target = artGroup;
                         artSpotlight.angle = Math.PI / 8;
                         artSpotlight.penumbra = 0.3;
                         artSpotlight.distance = 10;
@@ -586,10 +586,10 @@
                         fillLight.position.set(pos.x, 1.5, pos.z + 2);
                         scene.add(fillLight);
                     } else {
-                        // Regular box for other pieces
+                        // Regular box for other pieces - ALSO use the rotation formula
                         const art = new THREE.Mesh(artGeo, artMaterials[i % 3]);
                         art.position.y = 1.2;
-                        art.rotation.y = rotationY;
+                        art.rotation.y = rotationY + Math.PI; // Face toward center (standardized)
                         art.castShadow = true;
                         group.add(art);
                         artPiece = art;
