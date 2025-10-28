@@ -262,7 +262,7 @@
                 console.error('Error loading descriptions:', error);
                 console.log('Using default placeholder descriptions instead');
                 // Create default pieces if Excel fails
-                for (let i = 1; i <= 16; i++) {
+                for (let i = 1; i <= 20; i++) {
                     galleryData.pieces.push({
                         id: i,
                         title: `Art Piece ${i}`,
@@ -811,9 +811,37 @@
                 if (intersects.length > 0) {
                     let obj = intersects[0].object;
                     
+                    // Check if the clicked object itself is an info frame
+                    if (obj.userData && obj.userData.isInfoFrame) {
+                        let artworkGroup = obj.parent;
+                        while (artworkGroup && !artworkGroup.userData.artwork) {
+                            artworkGroup = artworkGroup.parent;
+                        }
+                        if (artworkGroup && artworkGroup.userData.artwork) {
+                            const art = artworkGroup.userData.artwork;
+                            
+                            document.getElementById('detail-title').textContent = art.title;
+                            document.getElementById('detail-artist').textContent = 'Artist: ' + art.artist;
+                            document.getElementById('detail-year').textContent = 'Year: ' + art.year;
+                            document.getElementById('detail-description').textContent = art.description;
+                            
+                            const detailImage = document.getElementById('detail-image');
+                            if (loadedImages[art.id]) {
+                                detailImage.src = loadedImages[art.id].src;
+                                detailImage.style.display = 'block';
+                            } else {
+                                detailImage.style.display = 'none';
+                            }
+                            
+                            document.getElementById('artwork-detail').classList.add('active');
+                        }
+                        return;
+                    }
+                    
+                    // Check parent hierarchy for info frame
                     let parent = obj.parent;
                     while (parent) {
-                        if (parent.userData.isInfoFrame) {
+                        if (parent.userData && parent.userData.isInfoFrame) {
                             let artworkGroup = parent.parent;
                             while (artworkGroup && !artworkGroup.userData.artwork) {
                                 artworkGroup = artworkGroup.parent;
