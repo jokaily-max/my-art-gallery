@@ -433,36 +433,23 @@
             const pedestalGeo = new THREE.BoxGeometry(1.2, 1, 0.6); // Width, Height, Depth
             const artGeo = new THREE.BoxGeometry(0.6, 0.6, 0.15);
 
-            // Distribute pieces across walls - FILL EACH WALL COMPLETELY BEFORE MOVING TO NEXT
+            // Distribute pieces across walls - NEW ORDER: Front → Right → Back → Left
             const totalPieces = galleryData.pieces.length;
             const positions = [];
             
-            // Calculate spacing - all pieces on back wall until full, then move to next wall
             const maxPerWall = 10; // Maximum pieces per wall
-            
             let remainingPieces = totalPieces;
             
-            // Back wall - fill first (pieces will be side by side)
-            const backWallCount = Math.min(maxPerWall, remainingPieces);
-            for (let i = 0; i < backWallCount; i++) {
-                const spacing = 40 / (backWallCount + 1);
-                positions.push({ x: -20 + spacing * (i + 1), z: -19, wall: 'back' });
+            // FRONT WALL FIRST (Z = 19)
+            const frontWallCount = Math.min(maxPerWall, remainingPieces);
+            for (let i = 0; i < frontWallCount; i++) {
+                const spacing = 40 / (frontWallCount + 1);
+                positions.push({ x: -20 + spacing * (i + 1), z: 19, wall: 'front' });
             }
-            remainingPieces -= backWallCount;
-            
-            // Only add to other walls if back wall is full
-            if (remainingPieces > 0) {
-                // Left wall - fill second
-                const leftWallCount = Math.min(maxPerWall, remainingPieces);
-                for (let i = 0; i < leftWallCount; i++) {
-                    const spacing = 40 / (leftWallCount + 1);
-                    positions.push({ x: -19, z: -20 + spacing * (i + 1), wall: 'left' });
-                }
-                remainingPieces -= leftWallCount;
-            }
+            remainingPieces -= frontWallCount;
             
             if (remainingPieces > 0) {
-                // Right wall - fill third
+                // RIGHT WALL SECOND (X = 19)
                 const rightWallCount = Math.min(maxPerWall, remainingPieces);
                 for (let i = 0; i < rightWallCount; i++) {
                     const spacing = 40 / (rightWallCount + 1);
@@ -472,11 +459,21 @@
             }
             
             if (remainingPieces > 0) {
-                // Front wall - fill last
-                const frontWallCount = remainingPieces;
-                for (let i = 0; i < frontWallCount; i++) {
-                    const spacing = 40 / (frontWallCount + 1);
-                    positions.push({ x: -20 + spacing * (i + 1), z: 19, wall: 'front' });
+                // BACK WALL THIRD (Z = -19)
+                const backWallCount = Math.min(maxPerWall, remainingPieces);
+                for (let i = 0; i < backWallCount; i++) {
+                    const spacing = 40 / (backWallCount + 1);
+                    positions.push({ x: -20 + spacing * (i + 1), z: -19, wall: 'back' });
+                }
+                remainingPieces -= backWallCount;
+            }
+            
+            if (remainingPieces > 0) {
+                // LEFT WALL LAST (X = -19)
+                const leftWallCount = remainingPieces;
+                for (let i = 0; i < leftWallCount; i++) {
+                    const spacing = 40 / (leftWallCount + 1);
+                    positions.push({ x: -19, z: -20 + spacing * (i + 1), wall: 'left' });
                 }
             }
 
