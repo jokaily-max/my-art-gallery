@@ -56,16 +56,25 @@
         #artwork-detail {
             position: absolute; top: 50%; left: 50%;
             transform: translate(-50%, -50%) scale(0);
-            background: white; padding: 30px; border-radius: 15px;
-            max-width: 600px; max-height: 80vh;
-            overflow-y: auto;
+            background: white; padding: 20px; border-radius: 15px;
+            max-width: 90vw; 
+            max-height: 90vh;
+            width: auto;
+            height: auto;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
             transition: transform 0.3s ease; z-index: 100;
         }
         #artwork-detail.active { transform: translate(-50%, -50%) scale(1); }
-        #artwork-detail h2 { margin-bottom: 10px; color: #333; }
-        #artwork-detail p { margin-bottom: 8px; color: #666; }
+        #artwork-detail h2 { margin-bottom: 10px; color: #333; font-size: clamp(18px, 3vw, 24px); }
+        #artwork-detail p { margin-bottom: 8px; color: #666; font-size: clamp(12px, 2vw, 16px); }
         #artwork-detail img { 
             max-width: 100%; 
+            max-height: 60vh;
+            width: auto;
+            height: auto;
+            object-fit: contain;
             margin: 15px 0; 
             border-radius: 8px;
             cursor: pointer;
@@ -75,6 +84,7 @@
             background: #e74c3c; color: white; border: none;
             width: 30px; height: 30px; border-radius: 50%;
             cursor: pointer; font-size: 18px; line-height: 30px;
+            z-index: 101;
         }
         #close-btn:hover { background: #c0392b; }
 
@@ -433,38 +443,38 @@
             const pedestalGeo = new THREE.BoxGeometry(1.2, 1, 0.6); // Width, Height, Depth
             const artGeo = new THREE.BoxGeometry(0.6, 0.6, 0.15);
 
-            // Distribute pieces across walls
+            // Distribute pieces across walls - 5 pieces per wall, clockwise
             const totalPieces = galleryData.pieces.length;
             const positions = [];
             
-            const piecesPerWall = Math.ceil(totalPieces / 4);
+            const piecesPerWall = 5;
             let backWallCount = Math.min(piecesPerWall, totalPieces);
-            let leftWallCount = Math.min(piecesPerWall, Math.max(0, totalPieces - backWallCount));
-            let rightWallCount = Math.min(piecesPerWall, Math.max(0, totalPieces - backWallCount - leftWallCount));
-            let frontWallCount = Math.max(0, totalPieces - backWallCount - leftWallCount - rightWallCount);
+            let rightWallCount = Math.min(piecesPerWall, Math.max(0, totalPieces - backWallCount));
+            let frontWallCount = Math.min(piecesPerWall, Math.max(0, totalPieces - backWallCount - rightWallCount));
+            let leftWallCount = Math.max(0, totalPieces - backWallCount - rightWallCount - frontWallCount);
             
-            // Back wall (Z = -19)
+            // Back wall (Z = -19) - piece 1 starts here
             for (let i = 0; i < backWallCount; i++) {
                 const spacing = 40 / (backWallCount + 1);
                 positions.push({ x: -20 + spacing * (i + 1), z: -19, wall: 'back' });
             }
             
-            // Left wall (X = -19)
-            for (let i = 0; i < leftWallCount; i++) {
-                const spacing = 40 / (leftWallCount + 1);
-                positions.push({ x: -19, z: -20 + spacing * (i + 1), wall: 'left' });
-            }
-            
-            // Right wall (X = 19)
+            // Right wall (X = 19) - clockwise next
             for (let i = 0; i < rightWallCount; i++) {
                 const spacing = 40 / (rightWallCount + 1);
                 positions.push({ x: 19, z: -20 + spacing * (i + 1), wall: 'right' });
             }
             
-            // Front wall (Z = 19)
+            // Front wall (Z = 19) - clockwise next
             for (let i = 0; i < frontWallCount; i++) {
                 const spacing = 40 / (frontWallCount + 1);
-                positions.push({ x: -20 + spacing * (i + 1), z: 19, wall: 'front' });
+                positions.push({ x: 20 - spacing * (i + 1), z: 19, wall: 'front' });
+            }
+            
+            // Left wall (X = -19) - clockwise last
+            for (let i = 0; i < leftWallCount; i++) {
+                const spacing = 40 / (leftWallCount + 1);
+                positions.push({ x: -19, z: 20 - spacing * (i + 1), wall: 'left' });
             }
 
             positions.forEach((pos, i) => {
