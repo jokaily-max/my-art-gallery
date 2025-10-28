@@ -203,7 +203,7 @@
         const CONFIG = {
             descriptionsFile: './descriptions.xlsx', // Your Excel file
             imagesFolder: './images/',               // Your images folder
-            imageExtensions: ['jpg', 'jpeg', 'png', 'JPG', 'JPEG', 'PNG', 'webp', 'WEBP'] // Try all common formats
+            imageExtensions: ['jpg', 'jpeg', 'png', 'JPG', 'JPEG', 'PNG']
         };
 
         let galleryData = {
@@ -433,48 +433,38 @@
             const pedestalGeo = new THREE.BoxGeometry(1.2, 1, 0.6); // Width, Height, Depth
             const artGeo = new THREE.BoxGeometry(0.6, 0.6, 0.15);
 
-            // Distribute pieces across walls - NEW ORDER: Front → Right → Back → Left
+            // Distribute pieces across walls
             const totalPieces = galleryData.pieces.length;
             const positions = [];
             
-            const maxPerWall = 10; // Maximum pieces per wall
-            let remainingPieces = totalPieces;
+            const piecesPerWall = Math.ceil(totalPieces / 4);
+            let backWallCount = Math.min(piecesPerWall, totalPieces);
+            let leftWallCount = Math.min(piecesPerWall, Math.max(0, totalPieces - backWallCount));
+            let rightWallCount = Math.min(piecesPerWall, Math.max(0, totalPieces - backWallCount - leftWallCount));
+            let frontWallCount = Math.max(0, totalPieces - backWallCount - leftWallCount - rightWallCount);
             
-            // FRONT WALL FIRST (Z = 19)
-            const frontWallCount = Math.min(maxPerWall, remainingPieces);
+            // Back wall (Z = -19)
+            for (let i = 0; i < backWallCount; i++) {
+                const spacing = 40 / (backWallCount + 1);
+                positions.push({ x: -20 + spacing * (i + 1), z: -19, wall: 'back' });
+            }
+            
+            // Left wall (X = -19)
+            for (let i = 0; i < leftWallCount; i++) {
+                const spacing = 40 / (leftWallCount + 1);
+                positions.push({ x: -19, z: -20 + spacing * (i + 1), wall: 'left' });
+            }
+            
+            // Right wall (X = 19)
+            for (let i = 0; i < rightWallCount; i++) {
+                const spacing = 40 / (rightWallCount + 1);
+                positions.push({ x: 19, z: -20 + spacing * (i + 1), wall: 'right' });
+            }
+            
+            // Front wall (Z = 19)
             for (let i = 0; i < frontWallCount; i++) {
                 const spacing = 40 / (frontWallCount + 1);
                 positions.push({ x: -20 + spacing * (i + 1), z: 19, wall: 'front' });
-            }
-            remainingPieces -= frontWallCount;
-            
-            if (remainingPieces > 0) {
-                // RIGHT WALL SECOND (X = 19)
-                const rightWallCount = Math.min(maxPerWall, remainingPieces);
-                for (let i = 0; i < rightWallCount; i++) {
-                    const spacing = 40 / (rightWallCount + 1);
-                    positions.push({ x: 19, z: -20 + spacing * (i + 1), wall: 'right' });
-                }
-                remainingPieces -= rightWallCount;
-            }
-            
-            if (remainingPieces > 0) {
-                // BACK WALL THIRD (Z = -19)
-                const backWallCount = Math.min(maxPerWall, remainingPieces);
-                for (let i = 0; i < backWallCount; i++) {
-                    const spacing = 40 / (backWallCount + 1);
-                    positions.push({ x: -20 + spacing * (i + 1), z: -19, wall: 'back' });
-                }
-                remainingPieces -= backWallCount;
-            }
-            
-            if (remainingPieces > 0) {
-                // LEFT WALL LAST (X = -19)
-                const leftWallCount = remainingPieces;
-                for (let i = 0; i < leftWallCount; i++) {
-                    const spacing = 40 / (leftWallCount + 1);
-                    positions.push({ x: -19, z: -20 + spacing * (i + 1), wall: 'left' });
-                }
             }
 
             positions.forEach((pos, i) => {
@@ -530,75 +520,44 @@
                 // Art piece on top - also facing center
                 let artPiece;
                 if (pieceData.has3DModel) {
-                    // Special handling for piece #1 and #2 - circular string art 3D replicas
-                    if ((pieceData.id === 1 || pieceData.id === 2) && loadedImages[pieceData.id]) {
-                        // Use PLANE with thickness illusion - with transparency for circular shape
-                        const planeGeometry = new THREE.PlaneGeometry(1.0, 1.0);
-                        
-                        // Create texture from the preloaded image
+                    // Special handling for piece #1 - circular string art
+                    if (pieceData.id === 1 && loadedImages[pieceData.id]) {
+                        // Create THIN CYLINDER for string art - standing UPRIGHT
+                        const cylinderGeometry = new THREE.CylinderGeometry(0.5, 0.5, 0.02, 64); // radius 0.5m, thin 2cm
                         const discTexture = new THREE.Texture(loadedImages[pieceData.id]);
                         discTexture.needsUpdate = true;
-                        discTexture.minFilter = THREE.LinearFilter; // Better quality
-                        discTexture.magFilter = THREE.LinearFilter;
                         
-                        // Create a group to add thickness
-                        const artGroup = new THREE.Group();
+                        const materials = [
+                            new THREE.MeshStandardMaterial({ color: 0x8B7355 }), // side edge
+                            new THREE.MeshStandardMaterial({ map: discTexture }), // top face
+                            new THREE.MeshStandardMaterial({ map: discTexture })  // bottom face
+                        ];
                         
-                        // Front face
-                        const frontMaterial = new THREE.MeshStandardMaterial({ 
-                            map: discTexture,
-                            transparent: false,
-                            side: THREE.DoubleSide // Show from both sides
-                        });
-                        const frontFace = new THREE.Mesh(planeGeometry, frontMaterial);
-                        frontFace.position.z = 0.015;
-                        artGroup.add(frontFace);
+                        const art = new THREE.Mesh(cylinderGeometry, materials);
+                        art.position.y = 1.5;
                         
-                        // Back face
-                        const backMaterial = new THREE.MeshStandardMaterial({ 
-                            map: discTexture,
-                            transparent: false,
-                            side: THREE.DoubleSide
-                        });
-                        const backFace = new THREE.Mesh(planeGeometry, backMaterial);
-                        backFace.position.z = -0.015;
-                        backFace.rotation.y = Math.PI;
-                        artGroup.add(backFace);
+                        // First tip sideways so the face shows (not the edge)
+                        art.rotation.z = Math.PI / 2;
+                        // Then rotate to face the CENTER of the room
+                        art.rotation.y = rotationY + Math.PI / 2; // Add 90° to correct orientation
                         
-                        // Edge (thin cylinder for the rim) - smaller radius to match visible circle
-                        const edgeGeometry = new THREE.CylinderGeometry(0.45, 0.45, 0.03, 64);
-                        const edgeMaterial = new THREE.MeshStandardMaterial({ color: 0x8B7355, roughness: 0.6 });
-                        const edge = new THREE.Mesh(edgeGeometry, edgeMaterial);
-                        edge.rotation.x = Math.PI / 2;
-                        artGroup.add(edge);
+                        art.castShadow = true;
+                        group.add(art);
+                        artPiece = art;
                         
-                        artGroup.position.y = 1.5;
-                        artGroup.rotation.y = rotationY + Math.PI;
-                        
-                        artGroup.castShadow = true;
-                        artGroup.receiveShadow = true;
-                        group.add(artGroup);
-                        artPiece = artGroup;
-                        
-                        // Special bright spotlight for pieces 1 and 2
-                        const artSpotlight = new THREE.SpotLight(0xffffff, 3.0);
-                        artSpotlight.position.set(pos.x, 5.5, pos.z);
-                        artSpotlight.target = artGroup;
-                        artSpotlight.angle = Math.PI / 8;
+                        // Add DEDICATED BRIGHT SPOTLIGHT for piece #1
+                        const artSpotlight = new THREE.SpotLight(0xffffff, 3.0); // Bright white light
+                        artSpotlight.position.set(pos.x, 5, pos.z);
+                        artSpotlight.target = art;
+                        artSpotlight.angle = Math.PI / 10; // Focused beam
                         artSpotlight.penumbra = 0.3;
-                        artSpotlight.distance = 10;
                         artSpotlight.castShadow = true;
                         scene.add(artSpotlight);
-                        
-                        // Front fill light
-                        const fillLight = new THREE.PointLight(0xffffff, 1.2, 5);
-                        fillLight.position.set(pos.x, 1.5, pos.z + 2);
-                        scene.add(fillLight);
                     } else {
-                        // Regular box for other pieces - face toward center
+                        // Regular box for other pieces
                         const art = new THREE.Mesh(artGeo, artMaterials[i % 3]);
                         art.position.y = 1.2;
-                        art.rotation.y = rotationY; // Face toward center (REMOVED + Math.PI)
+                        art.rotation.y = rotationY;
                         art.castShadow = true;
                         group.add(art);
                         artPiece = art;
