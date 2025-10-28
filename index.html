@@ -50,8 +50,31 @@
             position: absolute; top: 20px; left: 20px; color: white;
             background: rgba(0, 0, 0, 0.7); padding: 15px; border-radius: 10px;
             font-size: 14px; max-width: 300px; z-index: 10;
+            transition: all 0.3s ease;
         }
+        #info.minimized {
+            padding: 8px;
+            max-width: 120px;
+        }
+        #info.minimized .info-content { display: none; }
         #info h3 { margin-bottom: 8px; }
+        
+        #minimize-btn {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 12px;
+            line-height: 20px;
+            padding: 0;
+        }
+        #minimize-btn:hover { background: rgba(255, 255, 255, 0.3); }
         
         #artwork-detail {
             position: absolute; top: 50%; left: 50%;
@@ -175,11 +198,14 @@
     <canvas id="canvas"></canvas>
     
     <div id="info">
-        <h3>Controls</h3>
-        <p id="desktop-controls"><strong>WASD/Arrows</strong> - Move<br><strong>Mouse Edges</strong> - Look<br><strong>Click Frame</strong> - Info</p>
-        <p id="mobile-controls-text" style="display:none;"><strong>Left Stick</strong> - Move<br><strong>Right Stick</strong> - Look<br><strong>Tap Frame</strong> - Info</p>
-        <button id="mode-toggle-btn" class="control-btn" style="margin-top: 10px; width: 100%;">Switch to Mobile</button>
-        <button id="fullscreen-btn" class="control-btn" style="margin-top: 5px; width: 100%;">Fullscreen</button>
+        <button id="minimize-btn" title="Minimize">−</button>
+        <div class="info-content">
+            <h3>Controls</h3>
+            <p id="desktop-controls"><strong>WASD/Arrows</strong> - Move<br><strong>Mouse Edges</strong> - Look<br><strong>Click Frame</strong> - Info</p>
+            <p id="mobile-controls-text" style="display:none;"><strong>Left Stick</strong> - Move<br><strong>Right Stick</strong> - Look<br><strong>Tap Frame</strong> - Info</p>
+            <button id="mode-toggle-btn" class="control-btn" style="margin-top: 10px; width: 100%;">Switch to Mobile</button>
+            <button id="fullscreen-btn" class="control-btn" style="margin-top: 5px; width: 100%;">Fullscreen</button>
+        </div>
     </div>
     
     <canvas id="minimap"></canvas>
@@ -724,6 +750,7 @@
             let mouseY = window.innerHeight / 2;
             const edgeThreshold = 100;
             const rotationSpeed = 0.05;
+            let isDetailViewOpen = false; // Track if detail panel is open
 
             // Mobile mode
             let isMobileMode = false;
@@ -798,6 +825,21 @@
                 }
             });
 
+            // Minimize controls
+            document.getElementById('minimize-btn').addEventListener('click', () => {
+                const infoBox = document.getElementById('info');
+                const minimizeBtn = document.getElementById('minimize-btn');
+                if (infoBox.classList.contains('minimized')) {
+                    infoBox.classList.remove('minimized');
+                    minimizeBtn.textContent = '−';
+                    minimizeBtn.title = 'Minimize';
+                } else {
+                    infoBox.classList.add('minimized');
+                    minimizeBtn.textContent = '+';
+                    minimizeBtn.title = 'Expand';
+                }
+            });
+
             // Click detection
             canvas.addEventListener('click', (e) => {
                 const rect = canvas.getBoundingClientRect();
@@ -834,6 +876,7 @@
                             }
                             
                             document.getElementById('artwork-detail').classList.add('active');
+                            isDetailViewOpen = true; // Disable camera movement
                         }
                         return;
                     }
@@ -863,6 +906,7 @@
                                 }
                                 
                                 document.getElementById('artwork-detail').classList.add('active');
+                                isDetailViewOpen = true; // Disable camera movement
                             }
                             return;
                         }
@@ -874,6 +918,7 @@
             document.getElementById('close-btn').addEventListener('click', (e) => {
                 e.stopPropagation();
                 document.getElementById('artwork-detail').classList.remove('active');
+                isDetailViewOpen = false; // Re-enable camera movement
             });
 
             // Image enlargement
@@ -943,8 +988,8 @@
             function animate() {
                 requestAnimationFrame(animate);
 
-                // Desktop controls - mouse edge rotation
-                if (!isMobileMode) {
+                // Desktop controls - mouse edge rotation (only if detail view is closed)
+                if (!isMobileMode && !isDetailViewOpen) {
                     const screenWidth = window.innerWidth;
                     const screenHeight = window.innerHeight;
 
@@ -962,8 +1007,8 @@
                     }
                 }
 
-                // Mobile controls - joystick rotation
-                if (isMobileMode && joystickRight.active) {
+                // Mobile controls - joystick rotation (only if detail view is closed)
+                if (isMobileMode && !isDetailViewOpen && joystickRight.active) {
                     cameraYaw -= joystickRight.x * 0.1;
                     cameraPitch -= joystickRight.y * 0.05;
                 }
@@ -985,16 +1030,16 @@
 
                 const moveSpeed = 0.15;
 
-                // Desktop movement
-                if (!isMobileMode) {
+                // Desktop movement (only if detail view is closed)
+                if (!isMobileMode && !isDetailViewOpen) {
                     if (keys['w'] || keys['arrowup']) camera.position.addScaledVector(forward, moveSpeed);
                     if (keys['s'] || keys['arrowdown']) camera.position.addScaledVector(forward, -moveSpeed);
                     if (keys['a'] || keys['arrowleft']) camera.position.addScaledVector(right, -moveSpeed);
                     if (keys['d'] || keys['arrowright']) camera.position.addScaledVector(right, moveSpeed);
                 }
 
-                // Mobile movement
-                if (isMobileMode && joystickLeft.active) {
+                // Mobile movement (only if detail view is closed)
+                if (isMobileMode && !isDetailViewOpen && joystickLeft.active) {
                     camera.position.addScaledVector(forward, -joystickLeft.y * moveSpeed);
                     camera.position.addScaledVector(right, joystickLeft.x * moveSpeed);
                 }
