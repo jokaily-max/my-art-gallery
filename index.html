@@ -126,30 +126,36 @@
         .mobile-controls {
             display: none;
             position: fixed;
-            width: 100%;
-            height: 100%;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
             pointer-events: none;
-            z-index: 50;
+            z-index: 99;
         }
-        .mobile-controls.active { display: block; }
+        .mobile-controls.active { 
+            display: block;
+        }
         
         .joystick {
-            position: absolute;
+            position: fixed;
             width: 120px;
             height: 120px;
-            background: rgba(255, 255, 255, 0.2);
-            border: 3px solid rgba(255, 255, 255, 0.5);
+            background: rgba(100, 150, 255, 0.4);
+            border: 4px solid rgba(100, 150, 255, 0.8);
             border-radius: 50%;
             pointer-events: all;
+            z-index: 100;
         }
-        #joystick-left { bottom: 30px; left: 30px; }
-        #joystick-right { bottom: 30px; right: 30px; }
+        #joystick-left { bottom: 40px; left: 40px; }
+        #joystick-right { bottom: 40px; right: 40px; }
         
         .joystick-inner {
             position: absolute;
             width: 50px;
             height: 50px;
-            background: rgba(255, 255, 255, 0.7);
+            background: rgba(255, 255, 255, 0.9);
+            border: 2px solid rgba(100, 150, 255, 1);
             border-radius: 50%;
             top: 50%;
             left: 50%;
@@ -810,7 +816,10 @@
             // Mode toggle
             document.getElementById('mode-toggle-btn').addEventListener('click', () => {
                 isMobileMode = !isMobileMode;
-                document.querySelector('.mobile-controls').classList.toggle('active', isMobileMode);
+                console.log('Mobile mode:', isMobileMode);
+                const mobileControls = document.querySelector('.mobile-controls');
+                mobileControls.classList.toggle('active', isMobileMode);
+                console.log('Mobile controls active:', mobileControls.classList.contains('active'));
                 document.getElementById('mode-toggle-btn').textContent = isMobileMode ? 'Switch to Desktop' : 'Switch to Mobile';
                 document.getElementById('desktop-controls').style.display = isMobileMode ? 'none' : 'block';
                 document.getElementById('mobile-controls-text').style.display = isMobileMode ? 'block' : 'none';
