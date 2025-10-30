@@ -256,8 +256,8 @@
     <script>
         // Configuration
         const CONFIG = {
-            descriptionsFile: './descriptions.xlsx', // Your Excel file
-            imagesFolder: './images/',               // Your images folder
+            descriptionsFile: './descriptions.xlsx',
+            imagesFolder: './images/',
             imageExtensions: ['jpg', 'jpeg', 'png', 'JPG', 'JPEG', 'PNG']
         };
 
@@ -272,7 +272,6 @@
                 const arrayBuffer = await response.arrayBuffer();
                 const workbook = XLSX.read(arrayBuffer, { type: 'array' });
                 
-                // Get first sheet
                 const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
                 const data = XLSX.utils.sheet_to_json(firstSheet, { defval: '' });
                 
@@ -282,7 +281,6 @@
                     throw new Error('Excel file is empty');
                 }
                 
-                // Map Excel data to gallery pieces - try multiple possible column names
                 data.forEach(row => {
                     const piece = {
                         id: row['ID'] || row['id'] || row['Piece'] || row['piece'] || row['Number'] || row['number'] || row['#'],
@@ -298,7 +296,6 @@
                     }
                 });
                 
-                // Sort by ID
                 galleryData.pieces.sort((a, b) => a.id - b.id);
                 
                 console.log(`✓ Loaded ${galleryData.pieces.length} piece descriptions from Excel`);
@@ -306,7 +303,6 @@
             } catch (error) {
                 console.error('Error loading descriptions:', error);
                 console.log('Using default placeholder descriptions instead');
-                // Create default pieces if Excel fails
                 for (let i = 1; i <= 20; i++) {
                     galleryData.pieces.push({
                         id: i,
@@ -328,7 +324,6 @@
             
             for (let piece of galleryData.pieces) {
                 const promise = new Promise((resolve) => {
-                    let loaded = false;
                     let extIndex = 0;
                     
                     function tryNextExtension() {
@@ -389,247 +384,78 @@
             camera.position.set(0, 1.6, 10);
 
             const canvas = document.getElementById('canvas');
-            const renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true });
-            renderer.setSize(window.innerWidth, window.innerHeight);
-            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-            renderer.shadowMap.enabled = true;
-            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-            renderer.toneMapping = THREE.ACESFilmicToneMapping;
-            renderer.toneMappingExposure = 1.0;
-
-            // Elegant museum lighting - warm and dramatic
-            const ambient = new THREE.AmbientLight(0xffd4a8, 0.15);
-            scene.add(ambient);
-
-            // Main chandelier center light
-            const centerLight = new THREE.PointLight(0xfff4d6, 2.5, 35);
-            centerLight.position.set(0, 5.0, 0);
-            centerLight.castShadow = true;
-            centerLight.shadow.mapSize.width = 2048;
-            centerLight.shadow.mapSize.height = 2048;
-            centerLight.shadow.radius = 4;
-            scene.add(centerLight);
-
-            // Warm corner accent lights
-            const cornerPositions = [
-                [15, 13], [-15, -13], [15, -13], [-15, 13]
-            ];
-            
-            cornerPositions.forEach(([x, z]) => {
-                const cornerLight = new THREE.SpotLight(0xffa860, 1.2, 30);
-                cornerLight.position.set(x, 5, z);
-                cornerLight.angle = Math.PI / 3;
-                cornerLight.penumbra = 0.7;
-                cornerLight.target.position.set(x * 0.7, 0, z * 0.7);
-                scene.add(cornerLight);
-                scene.add(cornerLight.target);
+            const renderer = new THREE.WebGLRenderer({ 
+                canvas, 
+                antialias: false, // OPTIMIZATION: Disable antialiasing
+                powerPreference: "high-performance"
             });
-            
-            // Subtle overall fill from above
-            const directionalLight = new THREE.DirectionalLight(0xffd9a8, 0.25);
-            directionalLight.position.set(5, 10, 7);
-            scene.add(directionalLight);
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.BasicShadowMap; // OPTIMIZATION: Use basic shadow map instead of PCF
 
-            // Floor - Rich dark hardwood with realistic grain
-            const floorCanvas = document.createElement('canvas');
-            floorCanvas.width = 1024;
-            floorCanvas.height = 1024;
-            const floorCtx = floorCanvas.getContext('2d');
-            
-            // Create wood grain pattern
-            const gradient = floorCtx.createLinearGradient(0, 0, 1024, 0);
-            gradient.addColorStop(0, '#2d2520');
-            gradient.addColorStop(0.3, '#3a2f28');
-            gradient.addColorStop(0.5, '#2d2520');
-            gradient.addColorStop(0.7, '#3a2f28');
-            gradient.addColorStop(1, '#2d2520');
-            floorCtx.fillStyle = gradient;
-            floorCtx.fillRect(0, 0, 1024, 1024);
-            
-            // Add wood grain details
-            for (let i = 0; i < 200; i++) {
-                floorCtx.strokeStyle = `rgba(25, 20, 18, ${0.1 + Math.random() * 0.15})`;
-                floorCtx.lineWidth = Math.random() * 2;
-                floorCtx.beginPath();
-                const y = Math.random() * 1024;
-                floorCtx.moveTo(0, y);
-                floorCtx.bezierCurveTo(
-                    256 + Math.random() * 100, y + (Math.random() - 0.5) * 20,
-                    512 + Math.random() * 100, y + (Math.random() - 0.5) * 20,
-                    1024, y + (Math.random() - 0.5) * 10
-                );
-                floorCtx.stroke();
-            }
-            
-            // Add subtle highlights for polish
-            for (let i = 0; i < 5000; i++) {
-                const x = Math.random() * 1024;
-                const y = Math.random() * 1024;
-                floorCtx.fillStyle = `rgba(80, 70, 60, ${Math.random() * 0.08})`;
-                floorCtx.fillRect(x, y, 1, 1);
-            }
-            
-            // Add plank separations
-            for (let i = 0; i < 40; i++) {
-                const x = i * 25.6;
-                floorCtx.strokeStyle = 'rgba(0, 0, 0, 0.25)';
-                floorCtx.lineWidth = 1.5;
-                floorCtx.beginPath();
-                floorCtx.moveTo(x, 0);
-                floorCtx.lineTo(x, 1024);
-                floorCtx.stroke();
-            }
-            
-            const floorTexture = new THREE.CanvasTexture(floorCanvas);
-            floorTexture.wrapS = THREE.RepeatWrapping;
-            floorTexture.wrapT = THREE.RepeatWrapping;
-            floorTexture.repeat.set(10, 10);
-            
+            // OPTIMIZED LIGHTING - Fewer lights, simpler shadows
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
+            scene.add(ambientLight);
+
+            // Main overhead light - single light instead of multiple
+            const mainLight = new THREE.DirectionalLight(0xffffff, 0.6);
+            mainLight.position.set(0, 10, 0);
+            mainLight.castShadow = true;
+            mainLight.shadow.mapSize.width = 1024; // OPTIMIZATION: Reduced from default
+            mainLight.shadow.mapSize.height = 1024;
+            mainLight.shadow.camera.left = -25;
+            mainLight.shadow.camera.right = 25;
+            mainLight.shadow.camera.top = 25;
+            mainLight.shadow.camera.bottom = -25;
+            scene.add(mainLight);
+
+            // Accent lights for ambiance (no shadows)
+            const accentLight1 = new THREE.PointLight(0xffd700, 0.3, 30);
+            accentLight1.position.set(-10, 4, -10);
+            scene.add(accentLight1);
+
+            const accentLight2 = new THREE.PointLight(0xffd700, 0.3, 30);
+            accentLight2.position.set(10, 4, 10);
+            scene.add(accentLight2);
+
+            // OPTIMIZED FLOOR - Simple solid color
             const floor = new THREE.Mesh(
-                new THREE.PlaneGeometry(40, 40, 40, 40),
+                new THREE.PlaneGeometry(40, 40),
                 new THREE.MeshStandardMaterial({ 
-                    map: floorTexture,
-                    color: 0x2d2520,
-                    roughness: 0.35,
-                    metalness: 0.15,
-                    envMapIntensity: 0.4
+                    color: 0x2a1e19,
+                    roughness: 0.85,
+                    metalness: 0.05
                 })
             );
             floor.rotation.x = -Math.PI / 2;
             floor.receiveShadow = true;
             scene.add(floor);
 
-            // Ceiling - Deep matte black
+            // OPTIMIZED CEILING - Simple geometry, no shadows
             const ceiling = new THREE.Mesh(
-                new THREE.PlaneGeometry(40, 40, 5, 5),
-                new THREE.MeshStandardMaterial({ 
-                    color: 0x050505,
-                    roughness: 0.95,
-                    metalness: 0.0
-                })
+                new THREE.PlaneGeometry(40, 40),
+                new THREE.MeshBasicMaterial({ color: 0x0a0a0a })
             );
             ceiling.position.y = 6;
             ceiling.rotation.x = Math.PI / 2;
             scene.add(ceiling);
-            
-            // Add ceiling beams for architectural interest
-            const beamMaterial = new THREE.MeshStandardMaterial({
-                color: 0x0a0a0a,
-                roughness: 0.8,
-                metalness: 0.1
-            });
-            
-            for (let i = -3; i <= 3; i++) {
-                const beam = new THREE.Mesh(
-                    new THREE.BoxGeometry(40, 0.3, 0.4),
-                    beamMaterial
-                );
-                beam.position.set(0, 5.7, i * 6);
-                beam.castShadow = true;
-                scene.add(beam);
-            }
 
-            // Modern elegant chandelier - suspended sculpture
-            // Main ring structure
-            const chandelierRing = new THREE.Mesh(
-                new THREE.TorusGeometry(1.8, 0.12, 16, 48),
-                new THREE.MeshStandardMaterial({ 
+            // Simple chandelier decoration (no complex geometry)
+            const chandelier = new THREE.Mesh(
+                new THREE.SphereGeometry(0.8, 16, 16),
+                new THREE.MeshStandardMaterial({
                     color: 0xd4af37,
-                    roughness: 0.15,
-                    metalness: 0.95,
+                    roughness: 0.2,
+                    metalness: 0.9,
                     emissive: 0x4a3820,
-                    emissiveIntensity: 0.2
+                    emissiveIntensity: 0.3
                 })
             );
-            chandelierRing.position.set(0, 5.2, 0);
-            chandelierRing.rotation.x = Math.PI / 2;
-            scene.add(chandelierRing);
-            
-            // Inner decorative elements
-            for (let i = 0; i < 12; i++) {
-                const angle = (i / 12) * Math.PI * 2;
-                const x = Math.cos(angle) * 1.5;
-                const z = Math.sin(angle) * 1.5;
-                
-                // Crystal pendant lights
-                const crystal = new THREE.Mesh(
-                    new THREE.ConeGeometry(0.08, 0.4, 6),
-                    new THREE.MeshStandardMaterial({
-                        color: 0xffffff,
-                        roughness: 0.05,
-                        metalness: 0.1,
-                        transparent: true,
-                        opacity: 0.9,
-                        emissive: 0xffffee,
-                        emissiveIntensity: 0.6
-                    })
-                );
-                crystal.position.set(x, 4.9, z);
-                scene.add(crystal);
-                
-                // Small accent lights
-                const accentLight = new THREE.PointLight(0xfff4d6, 0.8, 5);
-                accentLight.position.set(x, 4.9, z);
-                scene.add(accentLight);
-            }
-            
-            // Central glow disc
-            const lightDisc = new THREE.Mesh(
-                new THREE.CircleGeometry(1.3, 64),
-                new THREE.MeshStandardMaterial({ 
-                    color: 0xfff8e8,
-                    emissive: 0xfff8e8,
-                    emissiveIntensity: 0.8,
-                    roughness: 0.1,
-                    transparent: true,
-                    opacity: 0.7
-                })
-            );
-            lightDisc.position.set(0, 5.15, 0);
-            lightDisc.rotation.x = -Math.PI / 2;
-            scene.add(lightDisc);
+            chandelier.position.set(0, 5, 0);
+            scene.add(chandelier);
 
-            // Walls - Rich deep burgundy velvet texture
-            const wallCanvas = document.createElement('canvas');
-            wallCanvas.width = 512;
-            wallCanvas.height = 512;
-            const wallCtx = wallCanvas.getContext('2d');
-            
-            // Deep burgundy base
-            const wallGradient = wallCtx.createLinearGradient(0, 0, 512, 512);
-            wallGradient.addColorStop(0, '#3d2228');
-            wallGradient.addColorStop(0.5, '#4a2630');
-            wallGradient.addColorStop(1, '#3d2228');
-            wallCtx.fillStyle = wallGradient;
-            wallCtx.fillRect(0, 0, 512, 512);
-            
-            // Velvet-like texture with subtle sheen variation
-            for (let i = 0; i < 8000; i++) {
-                const x = Math.random() * 512;
-                const y = Math.random() * 512;
-                const brightness = 40 + Math.random() * 30;
-                const alpha = Math.random() * 0.06;
-                wallCtx.fillStyle = `rgba(${brightness + 30}, ${brightness}, ${brightness + 10}, ${alpha})`;
-                wallCtx.fillRect(x, y, Math.random() * 1.5, Math.random() * 1.5);
-            }
-            
-            // Add subtle fabric weave pattern
-            for (let y = 0; y < 512; y += 4) {
-                wallCtx.strokeStyle = `rgba(20, 10, 15, ${0.03 + Math.random() * 0.03})`;
-                wallCtx.lineWidth = 0.5;
-                wallCtx.beginPath();
-                wallCtx.moveTo(0, y);
-                wallCtx.lineTo(512, y);
-                wallCtx.stroke();
-            }
-            
-            const wallTexture = new THREE.CanvasTexture(wallCanvas);
-            wallTexture.wrapS = THREE.RepeatWrapping;
-            wallTexture.wrapT = THREE.RepeatWrapping;
-            wallTexture.repeat.set(3, 3);
-            
+            // OPTIMIZED WALLS - Simpler material
             const wallMat = new THREE.MeshStandardMaterial({ 
-                map: wallTexture,
                 color: 0x3d2228,
                 roughness: 0.92,
                 metalness: 0.02
@@ -660,84 +486,23 @@
 
             const artworkMeshes = [];
 
-            // Enhanced materials - White marble pedestals with gold trim
-            const pedestalCanvas = document.createElement('canvas');
-            pedestalCanvas.width = 512;
-            pedestalCanvas.height = 512;
-            const pedestalCtx = pedestalCanvas.getContext('2d');
-            
-            // White marble base
-            pedestalCtx.fillStyle = '#f5f5f0';
-            pedestalCtx.fillRect(0, 0, 512, 512);
-            
-            // Add marble veining
-            for (let i = 0; i < 30; i++) {
-                pedestalCtx.strokeStyle = `rgba(180, 175, 170, ${0.15 + Math.random() * 0.2})`;
-                pedestalCtx.lineWidth = 1 + Math.random() * 3;
-                pedestalCtx.beginPath();
-                const startX = Math.random() * 512;
-                const startY = Math.random() * 512;
-                pedestalCtx.moveTo(startX, startY);
-                for (let j = 0; j < 5; j++) {
-                    pedestalCtx.lineTo(
-                        startX + (Math.random() - 0.5) * 200,
-                        startY + (Math.random() - 0.5) * 200
-                    );
-                }
-                pedestalCtx.stroke();
-            }
-            
-            // Add subtle texture
-            for (let i = 0; i < 5000; i++) {
-                const x = Math.random() * 512;
-                const y = Math.random() * 512;
-                const brightness = 230 + Math.random() * 25;
-                const alpha = Math.random() * 0.08;
-                pedestalCtx.fillStyle = `rgba(${brightness}, ${brightness}, ${brightness-5}, ${alpha})`;
-                pedestalCtx.fillRect(x, y, 1, 1);
-            }
-            
-            const pedestalTexture = new THREE.CanvasTexture(pedestalCanvas);
-            pedestalTexture.wrapS = THREE.RepeatWrapping;
-            pedestalTexture.wrapT = THREE.RepeatWrapping;
-            
+            // OPTIMIZED PEDESTAL MATERIAL - Simple, no procedural texture
             const pedestalMat = new THREE.MeshStandardMaterial({ 
-                map: pedestalTexture,
                 color: 0xf5f5f0,
                 roughness: 0.25,
                 metalness: 0.1
             });
-            
-            // Create beveled pedestal geometry instead of sharp box
-            function createBeveledPedestal() {
-                const shape = new THREE.Shape();
-                const w = 0.6, h = 0.5;
-                shape.moveTo(-w, -h);
-                shape.lineTo(w, -h);
-                shape.lineTo(w, h);
-                shape.lineTo(-w, h);
-                shape.lineTo(-w, -h);
-                
-                const extrudeSettings = {
-                    depth: 0.3,
-                    bevelEnabled: true,
-                    bevelThickness: 0.02,
-                    bevelSize: 0.02,
-                    bevelSegments: 3
-                };
-                
-                return new THREE.ExtrudeGeometry(shape, extrudeSettings);
-            }
+
             const artMat1 = new THREE.MeshStandardMaterial({ color: 0x3a5f7a, roughness: 0.7 });
             const artMat2 = new THREE.MeshStandardMaterial({ color: 0xb08560, roughness: 0.7 });
             const artMat3 = new THREE.MeshStandardMaterial({ color: 0x5a4d42, roughness: 0.7 });
             const artMaterials = [artMat1, artMat2, artMat3];
 
-            // Rectangular pedestal geometry - long side parallel to wall
-            const pedestalGeo = new THREE.BoxGeometry(1.2, 1, 0.6); // Width, Height, Depth
+            // OPTIMIZED GEOMETRY - Simple boxes
+            const pedestalGeo = new THREE.BoxGeometry(1.2, 1, 0.6);
             const artGeo = new THREE.BoxGeometry(0.6, 0.6, 0.15);
 
-            // Distribute pieces across walls - 5 pieces per wall, clockwise
+            // Distribute pieces across walls
             const totalPieces = galleryData.pieces.length;
             const positions = [];
             
@@ -747,25 +512,25 @@
             let frontWallCount = Math.min(piecesPerWall, Math.max(0, totalPieces - backWallCount - rightWallCount));
             let leftWallCount = Math.max(0, totalPieces - backWallCount - rightWallCount - frontWallCount);
             
-            // Back wall (Z = -19) - piece 1 starts here
+            // Back wall
             for (let i = 0; i < backWallCount; i++) {
                 const spacing = 40 / (backWallCount + 1);
                 positions.push({ x: -20 + spacing * (i + 1), z: -19, wall: 'back' });
             }
             
-            // Right wall (X = 19) - clockwise next
+            // Right wall
             for (let i = 0; i < rightWallCount; i++) {
                 const spacing = 40 / (rightWallCount + 1);
                 positions.push({ x: 19, z: -20 + spacing * (i + 1), wall: 'right' });
             }
             
-            // Front wall (Z = 19) - clockwise next
+            // Front wall
             for (let i = 0; i < frontWallCount; i++) {
                 const spacing = 40 / (frontWallCount + 1);
                 positions.push({ x: 20 - spacing * (i + 1), z: 19, wall: 'front' });
             }
             
-            // Left wall (X = -19) - clockwise last
+            // Left wall
             for (let i = 0; i < leftWallCount; i++) {
                 const spacing = 40 / (leftWallCount + 1);
                 positions.push({ x: -19, z: 20 - spacing * (i + 1), wall: 'left' });
@@ -777,34 +542,19 @@
                 const pieceData = galleryData.pieces[i];
                 const group = new THREE.Group();
                 
-                // Determine rotation to face center of room
+                // Determine rotation
                 let rotationY = 0;
                 if (pos.wall === 'back') {
-                    rotationY = 0; // Face forward (toward center)
+                    rotationY = 0;
                 } else if (pos.wall === 'front') {
-                    rotationY = Math.PI; // Face backward (toward center)
+                    rotationY = Math.PI;
                 } else if (pos.wall === 'left') {
-                    rotationY = Math.PI / 2; // Face right (toward center)
+                    rotationY = Math.PI / 2;
                 } else if (pos.wall === 'right') {
-                    rotationY = -Math.PI / 2; // Face left (toward center)
+                    rotationY = -Math.PI / 2;
                 }
                 
-                // Pedestal - elegant white marble with gold base trim
-                const pedestalGeo = new THREE.BoxGeometry(1.2, 1, 0.6, 4, 4, 4);
-                // Round the edges by modifying geometry
-                const positionAttribute = pedestalGeo.getAttribute('position');
-                for (let i = 0; i < positionAttribute.count; i++) {
-                    const x = positionAttribute.getX(i);
-                    const y = positionAttribute.getY(i);
-                    const z = positionAttribute.getZ(i);
-                    
-                    // Soften edges
-                    const edgeFactor = 0.95;
-                    if (Math.abs(x) > 0.5) positionAttribute.setX(i, x * edgeFactor);
-                    if (Math.abs(z) > 0.25) positionAttribute.setZ(i, z * edgeFactor);
-                }
-                pedestalGeo.computeVertexNormals();
-                
+                // OPTIMIZED PEDESTAL - Simple box, only pedestal casts shadows
                 const pedestal = new THREE.Mesh(pedestalGeo, pedestalMat);
                 pedestal.position.y = 0.5;
                 pedestal.rotation.y = rotationY;
@@ -812,7 +562,7 @@
                 pedestal.receiveShadow = true;
                 group.add(pedestal);
                 
-                // Gold trim at base
+                // Gold trim
                 const goldTrim = new THREE.Mesh(
                     new THREE.BoxGeometry(1.25, 0.08, 0.65),
                     new THREE.MeshStandardMaterial({
@@ -827,95 +577,72 @@
                 goldTrim.rotation.y = rotationY;
                 group.add(goldTrim);
 
-                // Number text on pedestal - positioned based on which wall (always faces center)
+                // OPTIMIZED NUMBER TEXT - Simpler canvas
                 const numberCanvas = document.createElement('canvas');
-                numberCanvas.width = 256;
-                numberCanvas.height = 256;
+                numberCanvas.width = 128; // OPTIMIZATION: Reduced from 256
+                numberCanvas.height = 128;
                 const numberCtx = numberCanvas.getContext('2d');
-                numberCtx.clearRect(0, 0, 256, 256);
-                numberCtx.fillStyle = '#FFD700'; // Gold color
-                numberCtx.font = 'bold 120px Arial';
+                numberCtx.fillStyle = '#FFD700';
+                numberCtx.font = 'bold 60px Arial';
                 numberCtx.textAlign = 'center';
                 numberCtx.textBaseline = 'middle';
-                numberCtx.fillText(pieceData.id.toString(), 128, 128);
+                numberCtx.fillText(pieceData.id.toString(), 64, 64);
                 
                 const numberTexture = new THREE.CanvasTexture(numberCanvas);
-                numberTexture.transparent = true;
                 const numberPlate = new THREE.Mesh(
                     new THREE.PlaneGeometry(0.3, 0.3),
                     new THREE.MeshStandardMaterial({ 
                         map: numberTexture,
-                        transparent: true,
-                        opacity: 1.0
+                        transparent: true
                     })
                 );
                 
-                // Position based on wall - upper left corner of the face that points to center
                 let numberX = 0, numberZ = 0;
                 if (pos.wall === 'back') {
-                    // Face forward toward center, number on upper left from viewer's perspective
-                    numberX = -0.4;  // Left side
-                    numberZ = 0.31;  // Front face
+                    numberX = -0.4;
+                    numberZ = 0.31;
                 } else if (pos.wall === 'front') {
-                    // Face backward toward center
-                    numberX = 0.4;   // Left side (reversed because facing opposite)
-                    numberZ = -0.31; // Back face
+                    numberX = 0.4;
+                    numberZ = -0.31;
                 } else if (pos.wall === 'left') {
-                    // Face right toward center
-                    numberX = 0.31;  // Right face
-                    numberZ = -0.4;  // Left side
+                    numberX = 0.31;
+                    numberZ = -0.4;
                 } else if (pos.wall === 'right') {
-                    // Face left toward center
-                    numberX = -0.31; // Left face
-                    numberZ = 0.4;   // Right side
+                    numberX = -0.31;
+                    numberZ = 0.4;
                 }
                 
-                numberPlate.position.set(numberX, 0.7, numberZ); // Upper position
+                numberPlate.position.set(numberX, 0.7, numberZ);
                 numberPlate.rotation.y = rotationY;
                 group.add(numberPlate);
 
-                // Art piece on top - also facing center
+                // Art piece - circular disc
                 let artPiece;
                 if (pieceData.has3DModel) {
-                    // Apply circular disc rendering to ALL pieces (like piece #1)
                     if (loadedImages[pieceData.id]) {
-                        // Create THIN CYLINDER for circular art - standing UPRIGHT
-                        const cylinderGeometry = new THREE.CylinderGeometry(0.5, 0.5, 0.02, 64); // radius 0.5m, thin 2cm
+                        // OPTIMIZED: Reduced segments from 64 to 32
+                        const cylinderGeometry = new THREE.CylinderGeometry(0.5, 0.5, 0.02, 32);
                         const discTexture = new THREE.Texture(loadedImages[pieceData.id]);
                         discTexture.needsUpdate = true;
                         
                         const materials = [
-                            new THREE.MeshStandardMaterial({ color: 0x8B7355 }), // side edge
-                            new THREE.MeshStandardMaterial({ map: discTexture }), // top face
-                            new THREE.MeshStandardMaterial({ map: discTexture })  // bottom face
+                            new THREE.MeshStandardMaterial({ color: 0x8B7355 }),
+                            new THREE.MeshStandardMaterial({ map: discTexture }),
+                            new THREE.MeshStandardMaterial({ map: discTexture })
                         ];
                         
                         const art = new THREE.Mesh(cylinderGeometry, materials);
                         art.position.y = 1.5;
-                        
-                        // First tip sideways so the face shows (not the edge)
                         art.rotation.z = Math.PI / 2;
-                        // Then rotate to face the CENTER of the room
-                        art.rotation.y = rotationY + Math.PI / 2; // Add 90° to correct orientation
-                        
-                        art.castShadow = true;
+                        art.rotation.y = rotationY + Math.PI / 2;
+                        art.castShadow = false; // OPTIMIZATION: Art pieces don't cast shadows
                         group.add(art);
                         artPiece = art;
-                        
-                        // Add DEDICATED BRIGHT SPOTLIGHT for each piece
-                        const artSpotlight = new THREE.SpotLight(0xffffff, 3.0); // Bright white light
-                        artSpotlight.position.set(pos.x, 5, pos.z);
-                        artSpotlight.target = art;
-                        artSpotlight.angle = Math.PI / 10; // Focused beam
-                        artSpotlight.penumbra = 0.3;
-                        artSpotlight.castShadow = true;
-                        scene.add(artSpotlight);
                     } else {
-                        // Regular box for pieces without images
                         const art = new THREE.Mesh(artGeo, artMaterials[i % 3]);
                         art.position.y = 1.2;
                         art.rotation.y = rotationY;
-                        art.castShadow = true;
+                        art.castShadow = false;
                         group.add(art);
                         artPiece = art;
                     }
@@ -930,33 +657,31 @@
                     artPiece = invisibleBox;
                 }
 
-                // Clickable info area on pedestal - positioned based on which wall (always faces center)
+                // OPTIMIZED INFO PANEL - Smaller canvas
                 const infoCanvas = document.createElement('canvas');
-                infoCanvas.width = 512;
-                infoCanvas.height = 512;
+                infoCanvas.width = 256; // OPTIMIZATION: Reduced from 512
+                infoCanvas.height = 256;
                 const infoCtx = infoCanvas.getContext('2d');
                 
-                // Draw the image or placeholder
                 if (loadedImages[pieceData.id]) {
-                    infoCtx.drawImage(loadedImages[pieceData.id], 0, 0, 512, 512);
+                    infoCtx.drawImage(loadedImages[pieceData.id], 0, 0, 256, 256);
                 } else {
                     infoCtx.fillStyle = '#ffffff';
-                    infoCtx.fillRect(0, 0, 512, 512);
+                    infoCtx.fillRect(0, 0, 256, 256);
                     infoCtx.fillStyle = '#999999';
-                    infoCtx.font = '32px Arial';
+                    infoCtx.font = '16px Arial';
                     infoCtx.textAlign = 'center';
-                    infoCtx.fillText('No Image', 256, 220);
-                    infoCtx.font = '24px Arial';
-                    infoCtx.fillText(`Piece ${pieceData.id}`, 256, 280);
+                    infoCtx.fillText('No Image', 128, 110);
+                    infoCtx.font = '12px Arial';
+                    infoCtx.fillText(`Piece ${pieceData.id}`, 128, 140);
                 }
                 
-                // Add "CLICK HERE" text at the bottom
                 infoCtx.fillStyle = 'rgba(0, 0, 0, 0.8)';
-                infoCtx.fillRect(0, 412, 512, 100);
+                infoCtx.fillRect(0, 206, 256, 50);
                 infoCtx.fillStyle = '#ff0000';
-                infoCtx.font = 'bold 40px Arial';
+                infoCtx.font = 'bold 20px Arial';
                 infoCtx.textAlign = 'center';
-                infoCtx.fillText('CLICK HERE', 256, 470);
+                infoCtx.fillText('CLICK HERE', 128, 235);
                 
                 const infoTexture = new THREE.CanvasTexture(infoCanvas);
                 const infoPlane = new THREE.Mesh(
@@ -964,129 +689,42 @@
                     new THREE.MeshStandardMaterial({ map: infoTexture })
                 );
                 
-                // Position based on wall - center of the face that points to center
                 let infoX = 0, infoZ = 0;
                 if (pos.wall === 'back') {
-                    // Face forward toward center
-                    infoX = 0;       // Center
-                    infoZ = 0.31;    // Front face
+                    infoX = 0;
+                    infoZ = 0.31;
                 } else if (pos.wall === 'front') {
-                    // Face backward toward center
-                    infoX = 0;       // Center
-                    infoZ = -0.31;   // Back face
+                    infoX = 0;
+                    infoZ = -0.31;
                 } else if (pos.wall === 'left') {
-                    // Face right toward center
-                    infoX = 0.31;    // Right face
-                    infoZ = 0;       // Center
+                    infoX = 0.31;
+                    infoZ = 0;
                 } else if (pos.wall === 'right') {
-                    // Face left toward center
-                    infoX = -0.31;   // Left face
-                    infoZ = 0;       // Center
+                    infoX = -0.31;
+                    infoZ = 0;
                 }
                 
-                infoPlane.position.set(infoX, 0.5, infoZ); // Middle height position
+                infoPlane.position.set(infoX, 0.4, infoZ);
                 infoPlane.rotation.y = rotationY;
-                infoPlane.userData = { isInfoFrame: true };
+                infoPlane.userData.isInfoFrame = true;
                 group.add(infoPlane);
 
                 group.position.set(pos.x, 0, pos.z);
-                
-                group.userData = { 
-                    artwork: {
-                        id: pieceData.id,
-                        title: pieceData.title,
-                        artist: pieceData.artist,
-                        year: pieceData.year,
-                        description: pieceData.description
-                    }
-                };
-                artworkMeshes.push(group);
+                group.userData.artwork = pieceData;
                 scene.add(group);
-
-                // Enhanced spotlight with warm dramatic glow matching reference
-                const spot = new THREE.SpotLight(0xffb870, 2.5);
-                spot.position.set(pos.x, 5.5, pos.z);
-                spot.target = artPiece;
-                spot.angle = Math.PI / 7;
-                spot.penumbra = 0.6;
-                spot.distance = 10;
-                spot.decay = 2;
-                if (i < 12) {
-                    spot.castShadow = true;
-                    spot.shadow.mapSize.width = 512;
-                    spot.shadow.mapSize.height = 512;
-                }
-                scene.add(spot);
-                
-                // Add wall wash light for that dramatic glow on walls
-                const wallWash = new THREE.SpotLight(0xffa860, 1.0);
-                wallWash.position.set(pos.x, 4.5, pos.z);
-                
-                // Point at wall behind the piece
-                const wallTarget = new THREE.Object3D();
-                if (pos.wall === 'back') {
-                    wallTarget.position.set(pos.x, 3, pos.z - 0.5);
-                } else if (pos.wall === 'front') {
-                    wallTarget.position.set(pos.x, 3, pos.z + 0.5);
-                } else if (pos.wall === 'left') {
-                    wallTarget.position.set(pos.x - 0.5, 3, pos.z);
-                } else if (pos.wall === 'right') {
-                    wallTarget.position.set(pos.x + 0.5, 3, pos.z);
-                }
-                scene.add(wallTarget);
-                wallWash.target = wallTarget;
-                wallWash.angle = Math.PI / 4;
-                wallWash.penumbra = 0.8;
-                scene.add(wallWash);
+                artworkMeshes.push(infoPlane);
             });
 
-            // Central platform - Elegant stepped display with marble and gold
-            // Main platform - white marble
-            const platformCanvas = document.createElement('canvas');
-            platformCanvas.width = 512;
-            platformCanvas.height = 512;
-            const platformCtx = platformCanvas.getContext('2d');
+            // OPTIMIZED CENTRAL PLATFORM - Simpler geometry
+            const platformMat = new THREE.MeshStandardMaterial({ 
+                color: 0xf0f0ea,
+                roughness: 0.3,
+                metalness: 0.1
+            });
             
-            // White marble
-            platformCtx.fillStyle = '#f0f0ea';
-            platformCtx.fillRect(0, 0, 512, 512);
-            
-            // Marble veining
-            for (let i = 0; i < 40; i++) {
-                platformCtx.strokeStyle = `rgba(170, 165, 160, ${0.12 + Math.random() * 0.18})`;
-                platformCtx.lineWidth = 1 + Math.random() * 2.5;
-                platformCtx.beginPath();
-                platformCtx.moveTo(Math.random() * 512, Math.random() * 512);
-                for (let j = 0; j < 4; j++) {
-                    platformCtx.lineTo(Math.random() * 512, Math.random() * 512);
-                }
-                platformCtx.stroke();
-            }
-            
-            // Texture
-            for (let i = 0; i < 4000; i++) {
-                const x = Math.random() * 512;
-                const y = Math.random() * 512;
-                const brightness = 225 + Math.random() * 30;
-                const alpha = Math.random() * 0.1;
-                platformCtx.fillStyle = `rgba(${brightness}, ${brightness}, ${brightness-5}, ${alpha})`;
-                platformCtx.fillRect(x, y, 1, 1);
-            }
-            
-            const platformTexture = new THREE.CanvasTexture(platformCanvas);
-            platformTexture.wrapS = THREE.RepeatWrapping;
-            platformTexture.wrapT = THREE.RepeatWrapping;
-            platformTexture.repeat.set(3, 3);
-            
-            // Three-tiered platform
             const platform1 = new THREE.Mesh(
-                new THREE.BoxGeometry(9, 0.2, 9, 8, 2, 8),
-                new THREE.MeshStandardMaterial({ 
-                    map: platformTexture,
-                    color: 0xf0f0ea,
-                    roughness: 0.3,
-                    metalness: 0.1
-                })
+                new THREE.BoxGeometry(9, 0.2, 9),
+                platformMat
             );
             platform1.position.set(0, 0.1, 0);
             platform1.castShadow = true;
@@ -1094,13 +732,8 @@
             scene.add(platform1);
             
             const platform2 = new THREE.Mesh(
-                new THREE.BoxGeometry(8, 0.25, 8, 8, 2, 8),
-                new THREE.MeshStandardMaterial({ 
-                    map: platformTexture,
-                    color: 0xf0f0ea,
-                    roughness: 0.3,
-                    metalness: 0.1
-                })
+                new THREE.BoxGeometry(8, 0.25, 8),
+                platformMat
             );
             platform2.position.set(0, 0.325, 0);
             platform2.castShadow = true;
@@ -1108,20 +741,15 @@
             scene.add(platform2);
             
             const platform3 = new THREE.Mesh(
-                new THREE.BoxGeometry(7, 0.3, 7, 8, 2, 8),
-                new THREE.MeshStandardMaterial({ 
-                    map: platformTexture,
-                    color: 0xf0f0ea,
-                    roughness: 0.3,
-                    metalness: 0.1
-                })
+                new THREE.BoxGeometry(7, 0.3, 7),
+                platformMat
             );
             platform3.position.set(0, 0.6, 0);
             platform3.castShadow = true;
             platform3.receiveShadow = true;
             scene.add(platform3);
             
-            // Gold trim around each tier
+            // Gold trim
             [9.1, 8.1, 7.1].forEach((size, index) => {
                 const trimHeight = [0.2, 0.45, 0.75][index];
                 const edgeTrim = new THREE.Mesh(
@@ -1135,34 +763,27 @@
                     })
                 );
                 edgeTrim.position.set(0, trimHeight, 0);
-                edgeTrim.castShadow = true;
                 scene.add(edgeTrim);
             });
 
-            // Central sculpture - Elegant gold and crystal abstract art
-            for (let i = 0; i < 25; i++) {
+            // OPTIMIZED SCULPTURE - Fewer pieces, simpler geometry, no shadows
+            for (let i = 0; i < 15; i++) { // OPTIMIZATION: Reduced from 25 to 15
                 const h = 0.6 + Math.random() * 2.2;
                 const s = 0.12 + Math.random() * 0.25;
                 
-                // Vary the shapes - mostly vertical elegant forms
                 const shapeType = Math.random();
                 let geometry;
                 if (shapeType < 0.4) {
-                    // Tall elegant cylinders
-                    geometry = new THREE.CylinderGeometry(s/2, s/2.5, h, 8);
+                    geometry = new THREE.CylinderGeometry(s/2, s/2.5, h, 6); // OPTIMIZATION: Reduced segments
                 } else if (shapeType < 0.7) {
-                    // Tapered obelisks
                     geometry = new THREE.ConeGeometry(s/2, h, 6);
                 } else {
-                    // Crystal-like shapes
                     geometry = new THREE.OctahedronGeometry(s * 0.7);
                 }
                 
-                // Mix of gold and translucent crystal materials
                 const materialType = Math.random();
                 let material;
                 if (materialType < 0.6) {
-                    // Brushed gold
                     material = new THREE.MeshStandardMaterial({ 
                         color: 0xd4af37,
                         roughness: 0.25,
@@ -1171,7 +792,6 @@
                         emissiveIntensity: 0.15
                     });
                 } else {
-                    // Translucent crystal
                     material = new THREE.MeshStandardMaterial({
                         color: 0xffffff,
                         roughness: 0.05,
@@ -1190,8 +810,8 @@
                     (Math.random() - 0.5) * 5.5
                 );
                 sculpture.rotation.y = Math.random() * Math.PI * 2;
-                sculpture.castShadow = true;
-                sculpture.receiveShadow = true;
+                sculpture.castShadow = false; // OPTIMIZATION: Sculptures don't cast shadows
+                sculpture.receiveShadow = false;
                 scene.add(sculpture);
             }
 
@@ -1199,99 +819,83 @@
             const keys = {};
             let cameraYaw = 0;
             let cameraPitch = 0;
+
+            // FIXED: Add keyboard event listeners for WASD
+            window.addEventListener('keydown', (e) => {
+                keys[e.key.toLowerCase()] = true;
+            });
+
+            window.addEventListener('keyup', (e) => {
+                keys[e.key.toLowerCase()] = false;
+            });
+
+            // Mouse position tracking
             let mouseX = window.innerWidth / 2;
             let mouseY = window.innerHeight / 2;
             const edgeThreshold = 100;
-            const rotationSpeed = 0.05;
-            let isDetailViewOpen = false; // Track if detail panel is open
+            const rotationSpeed = 0.02;
 
-            // Mobile mode
-            let isMobileMode = false;
-            const joystickLeft = { active: false, x: 0, y: 0, startX: 0, startY: 0 };
-            const joystickRight = { active: false, x: 0, y: 0, startX: 0, startY: 0 };
-
-            document.addEventListener('keydown', (e) => keys[e.key.toLowerCase()] = true);
-            document.addEventListener('keyup', (e) => keys[e.key.toLowerCase()] = false);
-
-            document.addEventListener('mousemove', (e) => {
+            window.addEventListener('mousemove', (e) => {
                 mouseX = e.clientX;
                 mouseY = e.clientY;
             });
 
-            // Mobile joystick controls - fixed for multi-touch
-            function setupJoystick(elementId, joystickData) {
+            // Mobile controls
+            let isMobileMode = false;
+            let isDetailViewOpen = false;
+
+            const joystickLeft = { active: false, x: 0, y: 0 };
+            const joystickRight = { active: false, x: 0, y: 0 };
+
+            function setupJoystick(elementId, joystickObj) {
                 const joystick = document.getElementById(elementId);
                 const inner = joystick.querySelector('.joystick-inner');
-                let touchId = null;
-
-                joystick.addEventListener('touchstart', (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    
-                    // Get the first touch on this joystick
-                    const touch = e.changedTouches[0];
-                    touchId = touch.identifier;
-                    
-                    const rect = joystick.getBoundingClientRect();
-                    joystickData.active = true;
-                    joystickData.startX = rect.left + rect.width / 2;
-                    joystickData.startY = rect.top + rect.height / 2;
-                }, { passive: false });
-
-                joystick.addEventListener('touchmove', (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    
-                    if (!joystickData.active || touchId === null) return;
-                    
-                    // Find the touch that belongs to this joystick
-                    let touch = null;
-                    for (let i = 0; i < e.touches.length; i++) {
-                        if (e.touches[i].identifier === touchId) {
-                            touch = e.touches[i];
-                            break;
-                        }
-                    }
-                    
-                    if (!touch) return;
-                    
-                    const deltaX = touch.clientX - joystickData.startX;
-                    const deltaY = touch.clientY - joystickData.startY;
-                    
-                    const distance = Math.min(35, Math.sqrt(deltaX * deltaX + deltaY * deltaY));
-                    const angle = Math.atan2(deltaY, deltaX);
-                    
-                    joystickData.x = Math.cos(angle) * distance / 35;
-                    joystickData.y = Math.sin(angle) * distance / 35;
-                    
-                    inner.style.transform = `translate(calc(-50% + ${joystickData.x * 35}px), calc(-50% + ${joystickData.y * 35}px))`;
-                }, { passive: false });
-
-                joystick.addEventListener('touchend', (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    
-                    // Check if our touch ended
-                    for (let i = 0; i < e.changedTouches.length; i++) {
-                        if (e.changedTouches[i].identifier === touchId) {
-                            joystickData.active = false;
-                            joystickData.x = 0;
-                            joystickData.y = 0;
-                            touchId = null;
-                            inner.style.transform = 'translate(-50%, -50%)';
-                            break;
-                        }
-                    }
-                }, { passive: false });
                 
-                joystick.addEventListener('touchcancel', (e) => {
+                function handleStart(e) {
                     e.preventDefault();
-                    joystickData.active = false;
-                    joystickData.x = 0;
-                    joystickData.y = 0;
-                    touchId = null;
+                    joystickObj.active = true;
+                }
+                
+                function handleMove(e) {
+                    if (!joystickObj.active) return;
+                    e.preventDefault();
+                    
+                    const touch = e.touches ? e.touches[0] : e;
+                    const rect = joystick.getBoundingClientRect();
+                    const centerX = rect.left + rect.width / 2;
+                    const centerY = rect.top + rect.height / 2;
+                    
+                    let deltaX = touch.clientX - centerX;
+                    let deltaY = touch.clientY - centerY;
+                    
+                    const maxDistance = 35;
+                    const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+                    
+                    if (distance > maxDistance) {
+                        deltaX = (deltaX / distance) * maxDistance;
+                        deltaY = (deltaY / distance) * maxDistance;
+                    }
+                    
+                    joystickObj.x = deltaX / maxDistance;
+                    joystickObj.y = deltaY / maxDistance;
+                    
+                    inner.style.transform = `translate(calc(-50% + ${deltaX}px), calc(-50% + ${deltaY}px))`;
+                }
+                
+                function handleEnd(e) {
+                    e.preventDefault();
+                    joystickObj.active = false;
+                    joystickObj.x = 0;
+                    joystickObj.y = 0;
                     inner.style.transform = 'translate(-50%, -50%)';
-                }, { passive: false });
+                }
+                
+                joystick.addEventListener('touchstart', handleStart);
+                joystick.addEventListener('mousedown', handleStart);
+                document.addEventListener('touchmove', handleMove);
+                document.addEventListener('mousemove', handleMove);
+                document.addEventListener('touchend', handleEnd);
+                document.addEventListener('mouseup', handleEnd);
             }
 
             setupJoystick('joystick-left', joystickLeft);
@@ -1300,19 +904,27 @@
             // Mode toggle
             document.getElementById('mode-toggle-btn').addEventListener('click', () => {
                 isMobileMode = !isMobileMode;
-                console.log('Mobile mode:', isMobileMode);
+                const btn = document.getElementById('mode-toggle-btn');
                 const mobileControls = document.querySelector('.mobile-controls');
-                mobileControls.classList.toggle('active', isMobileMode);
-                console.log('Mobile controls active:', mobileControls.classList.contains('active'));
-                
-                // Move minimap to top-right and resize in mobile mode
                 const minimap = document.getElementById('minimap');
-                minimap.classList.toggle('mobile-mode', isMobileMode);
-                updateMinimapSize();
+                const desktopControlsText = document.getElementById('desktop-controls');
+                const mobileControlsText = document.getElementById('mobile-controls-text');
                 
-                document.getElementById('mode-toggle-btn').textContent = isMobileMode ? 'Switch to Desktop' : 'Switch to Mobile';
-                document.getElementById('desktop-controls').style.display = isMobileMode ? 'none' : 'block';
-                document.getElementById('mobile-controls-text').style.display = isMobileMode ? 'block' : 'none';
+                if (isMobileMode) {
+                    btn.textContent = 'Switch to Desktop';
+                    mobileControls.classList.add('active');
+                    minimap.classList.add('mobile-mode');
+                    desktopControlsText.style.display = 'none';
+                    mobileControlsText.style.display = 'block';
+                } else {
+                    btn.textContent = 'Switch to Mobile';
+                    mobileControls.classList.remove('active');
+                    minimap.classList.remove('mobile-mode');
+                    desktopControlsText.style.display = 'block';
+                    mobileControlsText.style.display = 'none';
+                }
+                
+                updateMinimapSize();
             });
 
             // Fullscreen
@@ -1324,35 +936,25 @@
                 }
             });
 
-            // Minimize controls
+            // Minimize info panel
             document.getElementById('minimize-btn').addEventListener('click', () => {
-                const infoBox = document.getElementById('info');
-                const minimizeBtn = document.getElementById('minimize-btn');
-                if (infoBox.classList.contains('minimized')) {
-                    infoBox.classList.remove('minimized');
-                    minimizeBtn.textContent = '−';
-                    minimizeBtn.title = 'Minimize';
-                } else {
-                    infoBox.classList.add('minimized');
-                    minimizeBtn.textContent = '+';
-                    minimizeBtn.title = 'Expand';
-                }
+                document.getElementById('info').classList.toggle('minimized');
             });
 
-            // Click detection
-            canvas.addEventListener('click', (e) => {
-                const rect = canvas.getBoundingClientRect();
-                const x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
-                const y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+            // Raycasting for clicks
+            const raycaster = new THREE.Raycaster();
+            const mouse = new THREE.Vector2();
 
-                const raycaster = new THREE.Raycaster();
-                raycaster.setFromCamera(new THREE.Vector2(x, y), camera);
-                const intersects = raycaster.intersectObjects(artworkMeshes, true);
-                
+            canvas.addEventListener('click', (event) => {
+                mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+                mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+                raycaster.setFromCamera(mouse, camera);
+                const intersects = raycaster.intersectObjects(scene.children, true);
+
                 if (intersects.length > 0) {
-                    let obj = intersects[0].object;
+                    const obj = intersects[0].object;
                     
-                    // Check if the clicked object itself is an info frame
                     if (obj.userData && obj.userData.isInfoFrame) {
                         let artworkGroup = obj.parent;
                         while (artworkGroup && !artworkGroup.userData.artwork) {
@@ -1375,12 +977,11 @@
                             }
                             
                             document.getElementById('artwork-detail').classList.add('active');
-                            isDetailViewOpen = true; // Disable camera movement
+                            isDetailViewOpen = true;
                         }
                         return;
                     }
                     
-                    // Check parent hierarchy for info frame
                     let parent = obj.parent;
                     while (parent) {
                         if (parent.userData && parent.userData.isInfoFrame) {
@@ -1405,7 +1006,7 @@
                                 }
                                 
                                 document.getElementById('artwork-detail').classList.add('active');
-                                isDetailViewOpen = true; // Disable camera movement
+                                isDetailViewOpen = true;
                             }
                             return;
                         }
@@ -1417,10 +1018,9 @@
             document.getElementById('close-btn').addEventListener('click', (e) => {
                 e.stopPropagation();
                 document.getElementById('artwork-detail').classList.remove('active');
-                isDetailViewOpen = false; // Re-enable camera movement
+                isDetailViewOpen = false;
             });
 
-            // Image enlargement
             document.getElementById('detail-image').addEventListener('click', (e) => {
                 e.stopPropagation();
                 const src = e.target.src;
@@ -1451,18 +1051,15 @@
                 
                 minimapCtx.clearRect(0, 0, size, size);
                 
-                // Draw room outline
                 minimapCtx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
                 minimapCtx.lineWidth = 2;
                 minimapCtx.strokeRect(padding, padding, mapSize, mapSize);
                 
-                // Draw center platform
                 minimapCtx.fillStyle = 'rgba(100, 100, 100, 0.7)';
                 const centerSize = mapSize * 8 / 40;
                 const center = size / 2;
                 minimapCtx.fillRect(center - centerSize/2, center - centerSize/2, centerSize, centerSize);
                 
-                // Draw artworks
                 positions.forEach(pos => {
                     const mapX = center + (pos.x / 40) * mapSize;
                     const mapZ = center + (pos.z / 40) * mapSize;
@@ -1473,7 +1070,6 @@
                     minimapCtx.fill();
                 });
                 
-                // Draw player position
                 const playerX = center + (camera.position.x / 40) * mapSize;
                 const playerZ = center + (camera.position.z / 40) * mapSize;
                 
@@ -1482,7 +1078,6 @@
                 minimapCtx.arc(playerX, playerZ, 3, 0, Math.PI * 2);
                 minimapCtx.fill();
                 
-                // Draw player direction
                 minimapCtx.strokeStyle = 'rgba(255, 50, 50, 0.9)';
                 minimapCtx.lineWidth = 2;
                 minimapCtx.beginPath();
@@ -1498,7 +1093,6 @@
             function animate() {
                 requestAnimationFrame(animate);
 
-                // Desktop controls - mouse edge rotation (only if detail view is closed)
                 if (!isMobileMode && !isDetailViewOpen) {
                     const screenWidth = window.innerWidth;
                     const screenHeight = window.innerHeight;
@@ -1517,7 +1111,6 @@
                     }
                 }
 
-                // Mobile controls - joystick rotation (only if detail view is closed)
                 if (isMobileMode && !isDetailViewOpen && joystickRight.active) {
                     cameraYaw -= joystickRight.x * 0.1;
                     cameraPitch -= joystickRight.y * 0.05;
@@ -1529,7 +1122,6 @@
                 camera.rotation.y = cameraYaw;
                 camera.rotation.x = cameraPitch;
 
-                // Movement
                 const forward = new THREE.Vector3();
                 camera.getWorldDirection(forward);
                 forward.y = 0;
@@ -1540,7 +1132,6 @@
 
                 const moveSpeed = 0.15;
 
-                // Desktop movement (only if detail view is closed)
                 if (!isMobileMode && !isDetailViewOpen) {
                     if (keys['w'] || keys['arrowup']) camera.position.addScaledVector(forward, moveSpeed);
                     if (keys['s'] || keys['arrowdown']) camera.position.addScaledVector(forward, -moveSpeed);
@@ -1548,13 +1139,11 @@
                     if (keys['d'] || keys['arrowright']) camera.position.addScaledVector(right, moveSpeed);
                 }
 
-                // Mobile movement (only if detail view is closed)
                 if (isMobileMode && !isDetailViewOpen && joystickLeft.active) {
                     camera.position.addScaledVector(forward, -joystickLeft.y * moveSpeed);
                     camera.position.addScaledVector(right, joystickLeft.x * moveSpeed);
                 }
 
-                // Boundary limits
                 camera.position.x = Math.max(-18, Math.min(18, camera.position.x));
                 camera.position.z = Math.max(-18, Math.min(18, camera.position.z));
 
@@ -1571,7 +1160,6 @@
             });
         }
 
-        // Start loading when page loads
         init();
     </script>
 </body>
