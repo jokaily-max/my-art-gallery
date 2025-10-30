@@ -50,56 +50,22 @@
             position: absolute; top: 20px; left: 20px; color: white;
             background: rgba(0, 0, 0, 0.7); padding: 15px; border-radius: 10px;
             font-size: 14px; max-width: 300px; z-index: 10;
-            transition: all 0.3s ease;
         }
-        #info.minimized {
-            padding: 8px;
-            max-width: 120px;
-        }
-        #info.minimized .info-content { display: none; }
         #info h3 { margin-bottom: 8px; }
-        
-        #minimize-btn {
-            position: absolute;
-            top: 5px;
-            right: 5px;
-            background: rgba(255, 255, 255, 0.2);
-            color: white;
-            border: none;
-            width: 20px;
-            height: 20px;
-            border-radius: 3px;
-            cursor: pointer;
-            font-size: 12px;
-            line-height: 20px;
-            padding: 0;
-        }
-        #minimize-btn:hover { background: rgba(255, 255, 255, 0.3); }
         
         #artwork-detail {
             position: absolute; top: 50%; left: 50%;
             transform: translate(-50%, -50%) scale(0);
-            background: white; padding: 20px; border-radius: 15px;
-            max-width: 90vw; 
-            max-height: 90vh;
-            width: auto;
-            height: auto;
-            display: flex;
-            flex-direction: column;
+            background: white; padding: 30px; border-radius: 15px;
+            max-width: 600px; max-height: 80vh;
             overflow-y: auto;
-            overflow-x: hidden;
             transition: transform 0.3s ease; z-index: 100;
-            -webkit-overflow-scrolling: touch;
         }
         #artwork-detail.active { transform: translate(-50%, -50%) scale(1); }
-        #artwork-detail h2 { margin-bottom: 10px; color: #333; font-size: clamp(18px, 3vw, 24px); }
-        #artwork-detail p { margin-bottom: 8px; color: #666; font-size: clamp(12px, 2vw, 16px); }
+        #artwork-detail h2 { margin-bottom: 10px; color: #333; }
+        #artwork-detail p { margin-bottom: 8px; color: #666; }
         #artwork-detail img { 
             max-width: 100%; 
-            max-height: 60vh;
-            width: auto;
-            height: auto;
-            object-fit: contain;
             margin: 15px 0; 
             border-radius: 8px;
             cursor: pointer;
@@ -109,7 +75,6 @@
             background: #e74c3c; color: white; border: none;
             width: 30px; height: 30px; border-radius: 50%;
             cursor: pointer; font-size: 18px; line-height: 30px;
-            z-index: 101;
         }
         #close-btn:hover { background: #c0392b; }
 
@@ -123,51 +88,35 @@
             border: 2px solid rgba(255, 255, 255, 0.3);
             border-radius: 10px;
             z-index: 10;
-            transition: all 0.3s ease;
-        }
-        
-        #minimap.mobile-mode {
-            bottom: 20px;
-            left: 50%;
-            right: auto;
-            transform: translateX(-50%);
-            width: 120px;
-            height: 120px;
         }
 
         .mobile-controls {
             display: none;
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
+            width: 100%;
+            height: 100%;
             pointer-events: none;
-            z-index: 99;
+            z-index: 5;
         }
-        .mobile-controls.active { 
-            display: block;
-        }
+        .mobile-controls.active { display: block; }
         
         .joystick {
-            position: fixed;
+            position: absolute;
             width: 120px;
             height: 120px;
-            background: rgba(100, 150, 255, 0.4);
-            border: 4px solid rgba(100, 150, 255, 0.8);
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.3);
             border-radius: 50%;
             pointer-events: all;
-            z-index: 100;
         }
-        #joystick-left { bottom: 40px; left: 40px; }
-        #joystick-right { bottom: 40px; right: 40px; }
+        #joystick-left { bottom: 30px; left: 30px; }
+        #joystick-right { bottom: 30px; right: 30px; }
         
         .joystick-inner {
             position: absolute;
             width: 50px;
             height: 50px;
-            background: rgba(255, 255, 255, 0.9);
-            border: 2px solid rgba(100, 150, 255, 1);
+            background: rgba(255, 255, 255, 0.5);
             border-radius: 50%;
             top: 50%;
             left: 50%;
@@ -216,14 +165,11 @@
     <canvas id="canvas"></canvas>
     
     <div id="info">
-        <button id="minimize-btn" title="Minimize">−</button>
-        <div class="info-content">
-            <h3>Controls</h3>
-            <p id="desktop-controls"><strong>WASD/Arrows</strong> - Move<br><strong>Mouse Edges</strong> - Look<br><strong>Click Frame</strong> - Info</p>
-            <p id="mobile-controls-text" style="display:none;"><strong>Left Stick</strong> - Move<br><strong>Right Stick</strong> - Look<br><strong>Tap Frame</strong> - Info</p>
-            <button id="mode-toggle-btn" class="control-btn" style="margin-top: 10px; width: 100%;">Switch to Mobile</button>
-            <button id="fullscreen-btn" class="control-btn" style="margin-top: 5px; width: 100%;">Fullscreen</button>
-        </div>
+        <h3>Controls</h3>
+        <p id="desktop-controls"><strong>WASD/Arrows</strong> - Move<br><strong>Mouse Edges</strong> - Look<br><strong>Click Frame</strong> - Info</p>
+        <p id="mobile-controls-text" style="display:none;"><strong>Left Stick</strong> - Move<br><strong>Right Stick</strong> - Look<br><strong>Tap Frame</strong> - Info</p>
+        <button id="mode-toggle-btn" class="control-btn" style="margin-top: 10px; width: 100%;">Switch to Mobile</button>
+        <button id="fullscreen-btn" class="control-btn" style="margin-top: 5px; width: 100%;">Fullscreen</button>
     </div>
     
     <canvas id="minimap"></canvas>
@@ -306,7 +252,7 @@
                 console.error('Error loading descriptions:', error);
                 console.log('Using default placeholder descriptions instead');
                 // Create default pieces if Excel fails
-                for (let i = 1; i <= 20; i++) {
+                for (let i = 1; i <= 16; i++) {
                     galleryData.pieces.push({
                         id: i,
                         title: `Art Piece ${i}`,
@@ -487,38 +433,38 @@
             const pedestalGeo = new THREE.BoxGeometry(1.2, 1, 0.6); // Width, Height, Depth
             const artGeo = new THREE.BoxGeometry(0.6, 0.6, 0.15);
 
-            // Distribute pieces across walls - 5 pieces per wall, clockwise
+            // Distribute pieces across walls
             const totalPieces = galleryData.pieces.length;
             const positions = [];
             
-            const piecesPerWall = 5;
+            const piecesPerWall = Math.ceil(totalPieces / 4);
             let backWallCount = Math.min(piecesPerWall, totalPieces);
-            let rightWallCount = Math.min(piecesPerWall, Math.max(0, totalPieces - backWallCount));
-            let frontWallCount = Math.min(piecesPerWall, Math.max(0, totalPieces - backWallCount - rightWallCount));
-            let leftWallCount = Math.max(0, totalPieces - backWallCount - rightWallCount - frontWallCount);
+            let leftWallCount = Math.min(piecesPerWall, Math.max(0, totalPieces - backWallCount));
+            let rightWallCount = Math.min(piecesPerWall, Math.max(0, totalPieces - backWallCount - leftWallCount));
+            let frontWallCount = Math.max(0, totalPieces - backWallCount - leftWallCount - rightWallCount);
             
-            // Back wall (Z = -19) - piece 1 starts here
+            // Back wall (Z = -19)
             for (let i = 0; i < backWallCount; i++) {
                 const spacing = 40 / (backWallCount + 1);
                 positions.push({ x: -20 + spacing * (i + 1), z: -19, wall: 'back' });
             }
             
-            // Right wall (X = 19) - clockwise next
+            // Left wall (X = -19)
+            for (let i = 0; i < leftWallCount; i++) {
+                const spacing = 40 / (leftWallCount + 1);
+                positions.push({ x: -19, z: -20 + spacing * (i + 1), wall: 'left' });
+            }
+            
+            // Right wall (X = 19)
             for (let i = 0; i < rightWallCount; i++) {
                 const spacing = 40 / (rightWallCount + 1);
                 positions.push({ x: 19, z: -20 + spacing * (i + 1), wall: 'right' });
             }
             
-            // Front wall (Z = 19) - clockwise next
+            // Front wall (Z = 19)
             for (let i = 0; i < frontWallCount; i++) {
                 const spacing = 40 / (frontWallCount + 1);
-                positions.push({ x: 20 - spacing * (i + 1), z: 19, wall: 'front' });
-            }
-            
-            // Left wall (X = -19) - clockwise last
-            for (let i = 0; i < leftWallCount; i++) {
-                const spacing = 40 / (leftWallCount + 1);
-                positions.push({ x: -19, z: 20 - spacing * (i + 1), wall: 'left' });
+                positions.push({ x: -20 + spacing * (i + 1), z: 19, wall: 'front' });
             }
 
             positions.forEach((pos, i) => {
@@ -546,59 +492,37 @@
                 pedestal.castShadow = true;
                 group.add(pedestal);
 
-                // Number text on pedestal - positioned based on which wall (always faces center)
+                // Number plate on front of pedestal (facing center, readable from center)
                 const numberCanvas = document.createElement('canvas');
-                numberCanvas.width = 256;
-                numberCanvas.height = 256;
+                numberCanvas.width = 128;
+                numberCanvas.height = 64;
                 const numberCtx = numberCanvas.getContext('2d');
-                numberCtx.clearRect(0, 0, 256, 256);
-                numberCtx.fillStyle = '#FFD700'; // Gold color
-                numberCtx.font = 'bold 120px Arial';
+                numberCtx.fillStyle = '#2a2a2a';
+                numberCtx.fillRect(0, 0, 128, 64);
+                numberCtx.fillStyle = '#ffffff';
+                numberCtx.font = 'bold 40px Arial';
                 numberCtx.textAlign = 'center';
                 numberCtx.textBaseline = 'middle';
-                numberCtx.fillText(pieceData.id.toString(), 128, 128);
+                numberCtx.fillText(pieceData.id.toString(), 64, 32);
                 
                 const numberTexture = new THREE.CanvasTexture(numberCanvas);
-                numberTexture.transparent = true;
                 const numberPlate = new THREE.Mesh(
-                    new THREE.PlaneGeometry(0.3, 0.3),
-                    new THREE.MeshStandardMaterial({ 
-                        map: numberTexture,
-                        transparent: true,
-                        opacity: 1.0
-                    })
+                    new THREE.PlaneGeometry(0.4, 0.2),
+                    new THREE.MeshStandardMaterial({ map: numberTexture })
                 );
                 
-                // Position based on wall - upper left corner of the face that points to center
-                let numberX = 0, numberZ = 0;
-                if (pos.wall === 'back') {
-                    // Face forward toward center, number on upper left from viewer's perspective
-                    numberX = -0.4;  // Left side
-                    numberZ = 0.31;  // Front face
-                } else if (pos.wall === 'front') {
-                    // Face backward toward center
-                    numberX = 0.4;   // Left side (reversed because facing opposite)
-                    numberZ = -0.31; // Back face
-                } else if (pos.wall === 'left') {
-                    // Face right toward center
-                    numberX = 0.31;  // Right face
-                    numberZ = -0.4;  // Left side
-                } else if (pos.wall === 'right') {
-                    // Face left toward center
-                    numberX = -0.31; // Left face
-                    numberZ = 0.4;   // Right side
-                }
-                
-                numberPlate.position.set(numberX, 0.7, numberZ); // Upper position
+                // Position on front face of pedestal
+                numberPlate.position.set(0, 0.2, 0.35);
+                numberPlate.rotation.x = -Math.PI / 8;
                 numberPlate.rotation.y = rotationY;
                 group.add(numberPlate);
 
                 // Art piece on top - also facing center
                 let artPiece;
                 if (pieceData.has3DModel) {
-                    // Apply circular disc rendering to ALL pieces (like piece #1)
-                    if (loadedImages[pieceData.id]) {
-                        // Create THIN CYLINDER for circular art - standing UPRIGHT
+                    // Special handling for piece #1 - circular string art
+                    if (pieceData.id === 1 && loadedImages[pieceData.id]) {
+                        // Create THIN CYLINDER for string art - standing UPRIGHT
                         const cylinderGeometry = new THREE.CylinderGeometry(0.5, 0.5, 0.02, 64); // radius 0.5m, thin 2cm
                         const discTexture = new THREE.Texture(loadedImages[pieceData.id]);
                         discTexture.needsUpdate = true;
@@ -621,7 +545,7 @@
                         group.add(art);
                         artPiece = art;
                         
-                        // Add DEDICATED BRIGHT SPOTLIGHT for each piece
+                        // Add DEDICATED BRIGHT SPOTLIGHT for piece #1
                         const artSpotlight = new THREE.SpotLight(0xffffff, 3.0); // Bright white light
                         artSpotlight.position.set(pos.x, 5, pos.z);
                         artSpotlight.target = art;
@@ -630,7 +554,7 @@
                         artSpotlight.castShadow = true;
                         scene.add(artSpotlight);
                     } else {
-                        // Regular box for pieces without images
+                        // Regular box for other pieces
                         const art = new THREE.Mesh(artGeo, artMaterials[i % 3]);
                         art.position.y = 1.2;
                         art.rotation.y = rotationY;
@@ -649,64 +573,89 @@
                     artPiece = invisibleBox;
                 }
 
-                // Clickable info area on pedestal - positioned based on which wall (always faces center)
-                const infoCanvas = document.createElement('canvas');
-                infoCanvas.width = 512;
-                infoCanvas.height = 512;
-                const infoCtx = infoCanvas.getContext('2d');
+                // Info frame on pedestal - also facing center
+                const infoFrame = new THREE.Group();
                 
-                // Draw the image or placeholder
-                if (loadedImages[pieceData.id]) {
-                    infoCtx.drawImage(loadedImages[pieceData.id], 0, 0, 512, 512);
-                } else {
-                    infoCtx.fillStyle = '#ffffff';
-                    infoCtx.fillRect(0, 0, 512, 512);
-                    infoCtx.fillStyle = '#999999';
-                    infoCtx.font = '32px Arial';
-                    infoCtx.textAlign = 'center';
-                    infoCtx.fillText('No Image', 256, 220);
-                    infoCtx.font = '24px Arial';
-                    infoCtx.fillText(`Piece ${pieceData.id}`, 256, 280);
-                }
-                
-                // Add "CLICK HERE" text at the bottom
-                infoCtx.fillStyle = 'rgba(0, 0, 0, 0.8)';
-                infoCtx.fillRect(0, 412, 512, 100);
-                infoCtx.fillStyle = '#ff0000';
-                infoCtx.font = 'bold 40px Arial';
-                infoCtx.textAlign = 'center';
-                infoCtx.fillText('CLICK HERE', 256, 470);
-                
-                const infoTexture = new THREE.CanvasTexture(infoCanvas);
-                const infoPlane = new THREE.Mesh(
-                    new THREE.PlaneGeometry(0.5, 0.5),
-                    new THREE.MeshStandardMaterial({ map: infoTexture })
+                const frameStand = new THREE.Mesh(
+                    new THREE.BoxGeometry(0.02, 0.15, 0.02),
+                    new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.4 })
                 );
+                frameStand.position.y = 0.075;
+                infoFrame.add(frameStand);
                 
-                // Position based on wall - center of the face that points to center
-                let infoX = 0, infoZ = 0;
-                if (pos.wall === 'back') {
-                    // Face forward toward center
-                    infoX = 0;       // Center
-                    infoZ = 0.31;    // Front face
-                } else if (pos.wall === 'front') {
-                    // Face backward toward center
-                    infoX = 0;       // Center
-                    infoZ = -0.31;   // Back face
-                } else if (pos.wall === 'left') {
-                    // Face right toward center
-                    infoX = 0.31;    // Right face
-                    infoZ = 0;       // Center
-                } else if (pos.wall === 'right') {
-                    // Face left toward center
-                    infoX = -0.31;   // Left face
-                    infoZ = 0;       // Center
+                const frameBacking = new THREE.Mesh(
+                    new THREE.BoxGeometry(0.25, 0.35, 0.01),
+                    new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.5 })
+                );
+                frameBacking.position.y = 0.175;
+                frameBacking.castShadow = true;
+                infoFrame.add(frameBacking);
+                
+                // Picture area - use preloaded image
+                const pictureCanvas = document.createElement('canvas');
+                pictureCanvas.width = 512;
+                pictureCanvas.height = 512;
+                const pictureCtx = pictureCanvas.getContext('2d');
+                
+                if (loadedImages[pieceData.id]) {
+                    pictureCtx.drawImage(loadedImages[pieceData.id], 0, 0, 512, 512);
+                } else {
+                    pictureCtx.fillStyle = '#ffffff';
+                    pictureCtx.fillRect(0, 0, 512, 512);
+                    pictureCtx.fillStyle = '#999999';
+                    pictureCtx.font = '32px Arial';
+                    pictureCtx.textAlign = 'center';
+                    pictureCtx.fillText('No Image', 256, 220);
+                    pictureCtx.font = '24px Arial';
+                    pictureCtx.fillText(`Piece ${pieceData.id}`, 256, 280);
                 }
                 
-                infoPlane.position.set(infoX, 0.5, infoZ); // Middle height position
-                infoPlane.rotation.y = rotationY;
-                infoPlane.userData = { isInfoFrame: true };
-                group.add(infoPlane);
+                const pictureTex = new THREE.CanvasTexture(pictureCanvas);
+                const picture = new THREE.Mesh(
+                    new THREE.PlaneGeometry(0.22, 0.22),
+                    new THREE.MeshStandardMaterial({ map: pictureTex })
+                );
+                picture.position.set(0, 0.24, 0.006);
+                infoFrame.add(picture);
+                
+                // "CLICK HERE" text
+                const clickCanvas = document.createElement('canvas');
+                clickCanvas.width = 256;
+                clickCanvas.height = 64;
+                const clickCtx = clickCanvas.getContext('2d');
+                clickCtx.fillStyle = '#1a1a1a';
+                clickCtx.fillRect(0, 0, 256, 64);
+                clickCtx.fillStyle = '#ff0000';
+                clickCtx.font = 'bold 24px Arial';
+                clickCtx.textAlign = 'center';
+                clickCtx.fillText('CLICK HERE', 128, 40);
+                
+                const clickTex = new THREE.CanvasTexture(clickCanvas);
+                const clickText = new THREE.Mesh(
+                    new THREE.PlaneGeometry(0.22, 0.055),
+                    new THREE.MeshStandardMaterial({ map: clickTex })
+                );
+                clickText.position.set(0, 0.08, 0.006);
+                infoFrame.add(clickText);
+                
+                // Position frame on side of pedestal, facing center
+                let frameOffsetX = 0.45;
+                let frameOffsetZ = 0;
+                
+                if (pos.wall === 'back' || pos.wall === 'front') {
+                    frameOffsetX = 0.5;
+                    frameOffsetZ = 0;
+                } else {
+                    frameOffsetX = 0;
+                    frameOffsetZ = 0.35;
+                }
+                
+                infoFrame.position.set(frameOffsetX, 1.0, frameOffsetZ);
+                infoFrame.scale.set(0.75, 0.75, 0.75);
+                infoFrame.rotation.y = rotationY;
+                
+                infoFrame.userData = { isInfoFrame: true };
+                group.add(infoFrame);
 
                 group.position.set(pos.x, 0, pos.z);
                 
@@ -768,7 +717,6 @@
             let mouseY = window.innerHeight / 2;
             const edgeThreshold = 100;
             const rotationSpeed = 0.05;
-            let isDetailViewOpen = false; // Track if detail panel is open
 
             // Mobile mode
             let isMobileMode = false;
@@ -783,43 +731,24 @@
                 mouseY = e.clientY;
             });
 
-            // Mobile joystick controls - fixed for multi-touch
+            // Mobile joystick controls
             function setupJoystick(elementId, joystickData) {
                 const joystick = document.getElementById(elementId);
                 const inner = joystick.querySelector('.joystick-inner');
-                let touchId = null;
 
                 joystick.addEventListener('touchstart', (e) => {
                     e.preventDefault();
-                    e.stopPropagation();
-                    
-                    // Get the first touch on this joystick
-                    const touch = e.changedTouches[0];
-                    touchId = touch.identifier;
-                    
+                    const touch = e.touches[0];
                     const rect = joystick.getBoundingClientRect();
                     joystickData.active = true;
                     joystickData.startX = rect.left + rect.width / 2;
                     joystickData.startY = rect.top + rect.height / 2;
-                }, { passive: false });
+                });
 
                 joystick.addEventListener('touchmove', (e) => {
                     e.preventDefault();
-                    e.stopPropagation();
-                    
-                    if (!joystickData.active || touchId === null) return;
-                    
-                    // Find the touch that belongs to this joystick
-                    let touch = null;
-                    for (let i = 0; i < e.touches.length; i++) {
-                        if (e.touches[i].identifier === touchId) {
-                            touch = e.touches[i];
-                            break;
-                        }
-                    }
-                    
-                    if (!touch) return;
-                    
+                    if (!joystickData.active) return;
+                    const touch = e.touches[0];
                     const deltaX = touch.clientX - joystickData.startX;
                     const deltaY = touch.clientY - joystickData.startY;
                     
@@ -830,33 +759,15 @@
                     joystickData.y = Math.sin(angle) * distance / 35;
                     
                     inner.style.transform = `translate(calc(-50% + ${joystickData.x * 35}px), calc(-50% + ${joystickData.y * 35}px))`;
-                }, { passive: false });
+                });
 
                 joystick.addEventListener('touchend', (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    
-                    // Check if our touch ended
-                    for (let i = 0; i < e.changedTouches.length; i++) {
-                        if (e.changedTouches[i].identifier === touchId) {
-                            joystickData.active = false;
-                            joystickData.x = 0;
-                            joystickData.y = 0;
-                            touchId = null;
-                            inner.style.transform = 'translate(-50%, -50%)';
-                            break;
-                        }
-                    }
-                }, { passive: false });
-                
-                joystick.addEventListener('touchcancel', (e) => {
                     e.preventDefault();
                     joystickData.active = false;
                     joystickData.x = 0;
                     joystickData.y = 0;
-                    touchId = null;
                     inner.style.transform = 'translate(-50%, -50%)';
-                }, { passive: false });
+                });
             }
 
             setupJoystick('joystick-left', joystickLeft);
@@ -865,15 +776,7 @@
             // Mode toggle
             document.getElementById('mode-toggle-btn').addEventListener('click', () => {
                 isMobileMode = !isMobileMode;
-                console.log('Mobile mode:', isMobileMode);
-                const mobileControls = document.querySelector('.mobile-controls');
-                mobileControls.classList.toggle('active', isMobileMode);
-                console.log('Mobile controls active:', mobileControls.classList.contains('active'));
-                
-                // Move minimap to center in mobile mode
-                const minimap = document.getElementById('minimap');
-                minimap.classList.toggle('mobile-mode', isMobileMode);
-                
+                document.querySelector('.mobile-controls').classList.toggle('active', isMobileMode);
                 document.getElementById('mode-toggle-btn').textContent = isMobileMode ? 'Switch to Desktop' : 'Switch to Mobile';
                 document.getElementById('desktop-controls').style.display = isMobileMode ? 'none' : 'block';
                 document.getElementById('mobile-controls-text').style.display = isMobileMode ? 'block' : 'none';
@@ -885,21 +788,6 @@
                     document.documentElement.requestFullscreen();
                 } else {
                     document.exitFullscreen();
-                }
-            });
-
-            // Minimize controls
-            document.getElementById('minimize-btn').addEventListener('click', () => {
-                const infoBox = document.getElementById('info');
-                const minimizeBtn = document.getElementById('minimize-btn');
-                if (infoBox.classList.contains('minimized')) {
-                    infoBox.classList.remove('minimized');
-                    minimizeBtn.textContent = '−';
-                    minimizeBtn.title = 'Minimize';
-                } else {
-                    infoBox.classList.add('minimized');
-                    minimizeBtn.textContent = '+';
-                    minimizeBtn.title = 'Expand';
                 }
             });
 
@@ -916,38 +804,9 @@
                 if (intersects.length > 0) {
                     let obj = intersects[0].object;
                     
-                    // Check if the clicked object itself is an info frame
-                    if (obj.userData && obj.userData.isInfoFrame) {
-                        let artworkGroup = obj.parent;
-                        while (artworkGroup && !artworkGroup.userData.artwork) {
-                            artworkGroup = artworkGroup.parent;
-                        }
-                        if (artworkGroup && artworkGroup.userData.artwork) {
-                            const art = artworkGroup.userData.artwork;
-                            
-                            document.getElementById('detail-title').textContent = art.title;
-                            document.getElementById('detail-artist').textContent = 'Artist: ' + art.artist;
-                            document.getElementById('detail-year').textContent = 'Year: ' + art.year;
-                            document.getElementById('detail-description').textContent = art.description;
-                            
-                            const detailImage = document.getElementById('detail-image');
-                            if (loadedImages[art.id]) {
-                                detailImage.src = loadedImages[art.id].src;
-                                detailImage.style.display = 'block';
-                            } else {
-                                detailImage.style.display = 'none';
-                            }
-                            
-                            document.getElementById('artwork-detail').classList.add('active');
-                            isDetailViewOpen = true; // Disable camera movement
-                        }
-                        return;
-                    }
-                    
-                    // Check parent hierarchy for info frame
                     let parent = obj.parent;
                     while (parent) {
-                        if (parent.userData && parent.userData.isInfoFrame) {
+                        if (parent.userData.isInfoFrame) {
                             let artworkGroup = parent.parent;
                             while (artworkGroup && !artworkGroup.userData.artwork) {
                                 artworkGroup = artworkGroup.parent;
@@ -969,7 +828,6 @@
                                 }
                                 
                                 document.getElementById('artwork-detail').classList.add('active');
-                                isDetailViewOpen = true; // Disable camera movement
                             }
                             return;
                         }
@@ -981,7 +839,6 @@
             document.getElementById('close-btn').addEventListener('click', (e) => {
                 e.stopPropagation();
                 document.getElementById('artwork-detail').classList.remove('active');
-                isDetailViewOpen = false; // Re-enable camera movement
             });
 
             // Image enlargement
@@ -1051,8 +908,8 @@
             function animate() {
                 requestAnimationFrame(animate);
 
-                // Desktop controls - mouse edge rotation (only if detail view is closed)
-                if (!isMobileMode && !isDetailViewOpen) {
+                // Desktop controls - mouse edge rotation
+                if (!isMobileMode) {
                     const screenWidth = window.innerWidth;
                     const screenHeight = window.innerHeight;
 
@@ -1070,8 +927,8 @@
                     }
                 }
 
-                // Mobile controls - joystick rotation (only if detail view is closed)
-                if (isMobileMode && !isDetailViewOpen && joystickRight.active) {
+                // Mobile controls - joystick rotation
+                if (isMobileMode && joystickRight.active) {
                     cameraYaw -= joystickRight.x * 0.1;
                     cameraPitch -= joystickRight.y * 0.05;
                 }
@@ -1093,16 +950,16 @@
 
                 const moveSpeed = 0.15;
 
-                // Desktop movement (only if detail view is closed)
-                if (!isMobileMode && !isDetailViewOpen) {
+                // Desktop movement
+                if (!isMobileMode) {
                     if (keys['w'] || keys['arrowup']) camera.position.addScaledVector(forward, moveSpeed);
                     if (keys['s'] || keys['arrowdown']) camera.position.addScaledVector(forward, -moveSpeed);
                     if (keys['a'] || keys['arrowleft']) camera.position.addScaledVector(right, -moveSpeed);
                     if (keys['d'] || keys['arrowright']) camera.position.addScaledVector(right, moveSpeed);
                 }
 
-                // Mobile movement (only if detail view is closed)
-                if (isMobileMode && !isDetailViewOpen && joystickLeft.active) {
+                // Mobile movement
+                if (isMobileMode && joystickLeft.active) {
                     camera.position.addScaledVector(forward, -joystickLeft.y * moveSpeed);
                     camera.position.addScaledVector(right, joystickLeft.x * moveSpeed);
                 }
